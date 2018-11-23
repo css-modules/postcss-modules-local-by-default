@@ -76,5 +76,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 [0.0.9]:      https://github.com/postcss-modules-local-by-default/compare/v0.0.8...v0.0.9
 [0.0.10]:      https://github.com/postcss-modules-local-by-default/compare/v0.0.9...v0.0.10
 [0.0.11]:      https://github.com/postcss-modules-local-by-default/compare/v0.0.10...v0.0.11
-[0.0.11]:      https://github.com/postcss-modules-local-by-default/compare/v1.3.1...v2.0.0
+[2.0.0]:      https://github.com/postcss-modules-local-by-default/compare/v1.3.1...v2.0.0
 [2.0.1]:      https://github.com/postcss-modules-local-by-default/compare/v2.0.0...v2.0.1

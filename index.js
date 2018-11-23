@@ -201,7 +201,7 @@ function localizeDeclValue(valueNode, context) {
 }
 
 function localizeAnimationShorthandDeclValueNodes(nodes, context) {
-  let validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
+  const validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
 
   /*
   The spec defines some keywords that you can use to describe properties such as the timing
@@ -238,7 +238,7 @@ function localizeAnimationShorthandDeclValueNodes(nodes, context) {
     $unset: Infinity
   };
 
-  let didParseAnimationName = false;
+  const didParseAnimationName = false;
   const parsedAnimationKeywords = {};
   return nodes.map(function(valueNode) {
     const value =
