@@ -194,9 +194,9 @@ const tests = [
   {
     should:
       'not treat animation curve as identifier of animation name even if it separated by comma',
-    input: '.foo { animation: 1s normal ease-out infinite, 1s normal ease-out infinite; }',
+    input: '.foo { animation: slide-right 300ms forwards ease-out, fade-in 300ms forwards ease-out; }',
     expected:
-      ':local(.foo) { animation: 1s normal ease-out infinite, 1s normal ease-out infinite; }'
+      ':local(.foo) { animation: :local(slide-right) 300ms forwards ease-out, :local(fade-in) 300ms forwards ease-out; }'
   },
   {
     should: 'handle animations with custom timing functions',
