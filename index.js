@@ -45,22 +45,25 @@ function trimSelectors(selector) {
 }
 
 function localizeNodez(rule, mode, options) {
-  console.log(mode);
+  // console.log(mode);
   const isScopePseudo = node =>
     node.value === ':local' || node.value === ':global';
 
   const transform = (node, context) => {
     switch (node.type) {
       case 'root': {
-        const childContext = { ...context, hasLocals: false };
+        const childContext = { ...context };
         let overallIsGlobal;
 
         node.each(childNode => {
-          // isGlobal should not carry over across selectors:
+          // isGlobal and hasLocals should not carry over across selectors:
           // `:global .foo, .bar -> .foo, :local(.bar)`
           childContext.isGlobal = context.isGlobal;
+          childContext.hasLocals = false;
 
           transform(childNode, childContext);
+
+          console.log(overallIsGlobal, childContext);
 
           if (overallIsGlobal == null) {
             overallIsGlobal = childContext.isGlobal;
@@ -72,7 +75,7 @@ function localizeNodez(rule, mode, options) {
                   '" (multiple selectors must result in the same mode for the rule)'
               );
           }
-          console.log(childContext.hasLocals);
+
           if (childContext.hasLocals) {
             context.hasPureGlobals = false;
           }
@@ -81,11 +84,7 @@ function localizeNodez(rule, mode, options) {
         break;
       }
       case 'selector': {
-        // const childContext = { ...context, hasLocals: false };
-
         node.each(childNode => transform(childNode, context));
-
-        // context.isGlobal = childContext.isGlobal;
 
         trimSelectors(node);
 
@@ -104,13 +103,11 @@ function localizeNodez(rule, mode, options) {
       }
       case 'pseudo': {
         if (!isScopePseudo(node)) {
-          // const childContext = {
-          //   ...context,
-          //   hasLocals: false,
-          // };
+          // This needs to not update `isGlobal` for tests to pass
+          // the behavior seems _wrong_ tho.
+          const childContext = { ...context };
+          console.log('PSEUEDO', node.value, context);
           node.each(childNode => transform(childNode, context));
-
-          // if (childContext.hasLocals) context.hasLocals = true;
           break;
         }
 
@@ -120,11 +117,11 @@ function localizeNodez(rule, mode, options) {
           );
         }
 
-        const isGlobal = node.value === ':global';
-
         const isNested = !!node.length;
+        const isGlobal = node.value === ':global';
         if (!isNested) {
           context.isGlobal = isGlobal;
+
           context.shouldTrimTrainingWhitespace = !node.spaces.before;
           // console.log(node.spaces);
           node.remove();
@@ -148,6 +145,10 @@ function localizeNodez(rule, mode, options) {
               acc.concat(next.type === 'selector' ? next.nodes : next),
             []
           );
+        // console.log(context);
+        if (childContext.hasLocals) {
+          context.hasLocals = true;
+        }
 
         // console.log('asfasfasf', nodes);
 
@@ -160,6 +161,7 @@ function localizeNodez(rule, mode, options) {
           first.spaces = { before, after: first.spaces.after };
           last.spaces = { before: last.spaces.before, after };
         }
+
         nodes.forEach(childNode => {
           node.parent.insertBefore(node, childNode);
         });
@@ -192,11 +194,10 @@ function localizeNodez(rule, mode, options) {
               spaces,
             })
           );
-          console.log('HERE');
+          // console.log('HERE');
           context.hasLocals = true;
-        } else {
-          //node.spaces = spaces;
         }
+
         break;
       }
     }

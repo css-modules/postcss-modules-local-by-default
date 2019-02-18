@@ -312,23 +312,28 @@ const tests = [
   //   input: ':import("~/lol.css") { foo: __foo; }',
   //   expected: ':import("~/lol.css") { foo: __foo; }'
   // },
-  {
-    should: 'compile in pure mode',
-    input: ':global(.foo).bar, [type="radio"] ~ .label, :not(.foo), #bar {}',
-    options: { mode: 'pure' },
-    expected:
-      '.foo:local(.bar), [type="radio"] ~ :local(.label), :not(:local(.foo)), :local(#bar) {}',
-  },
+  // {
+  //   should: 'incorrectly handle nested selectors',
+  //   input: '.bar:not(:global .foo, .baz) {}',
+  //   expected: ':local(.bar):not(.foo, .baz) {}',
+  // },
+  // {
+  //   should: 'compile in pure mode',
+  //   input: ':global(.foo).bar, [type="radio"] ~ .label, :not(.foo), #bar {}',
+  //   options: { mode: 'pure' },
+  //   expected:
+  //     '.foo:local(.bar), [type="radio"] ~ :local(.label), :not(:local(.foo)), :local(#bar) {}',
+  // },
   // {
   //   should: 'compile explict global element',
   //   input: ':global(input) {}',
-  //   expected: 'input {}'
+  //   expected: 'input {}',
   // },
-  // {
-  //   should: 'compile explict global attribute',
-  //   input: ':global([type="radio"]), :not(:global [type="radio"]) {}',
-  //   expected: '[type="radio"], :not([type="radio"]) {}'
-  // },
+  {
+    should: 'compile explict global attribute',
+    input: ':global([type="radio"]), :not(:global [type="radio"]) {}',
+    expected: '[type="radio"], :not([type="radio"]) {}',
+  },
   // {
   //   should: 'throw on invalid mode',
   //   input: '',
@@ -343,83 +348,83 @@ const tests = [
   // {
   //   should: 'throw on nested :locals',
   //   input: ':local(:local(.foo)) {}',
-  //   error: /is not allowed inside/
+  //   error: /is not allowed inside/,
   // },
   // {
   //   should: 'throw on nested :globals',
   //   input: ':global(:global(.foo)) {}',
-  //   error: /is not allowed inside/
+  //   error: /is not allowed inside/,
   // },
   // {
   //   should: 'throw on nested mixed',
   //   input: ':local(:global(.foo)) {}',
-  //   error: /is not allowed inside/
+  //   error: /is not allowed inside/,
   // },
   // {
   //   should: 'throw on nested broad :local',
   //   input: ':global(:local .foo) {}',
-  //   error: /is not allowed inside/
+  //   error: /is not allowed inside/,
   // },
   // {
   //   should: 'throw on incorrect spacing with broad :global',
   //   input: '.foo :global.bar {}',
-  //   error: /Missing whitespace after :global/
+  //   error: /Missing whitespace after :global/,
   // },
   // {
   //   should: 'throw on incorrect spacing with broad :local',
   //   input: '.foo:local .bar {}',
-  //   error: /Missing whitespace before :local/
+  //   error: /Missing whitespace before :local/,
   // },
   // {
   //   should: 'throw on not pure selector (global class)',
   //   input: ':global(.foo) {}',
   //   options: { mode: 'pure' },
-  //   error: /":global\(\.foo\)" is not pure/
+  //   error: /":global\(\.foo\)" is not pure/,
   // },
   // {
   //   should: 'throw on not pure selector (with multiple 1)',
   //   input: '.foo, :global(.bar) {}',
   //   options: { mode: 'pure' },
-  //   error: /".foo, :global\(\.bar\)" is not pure/
+  //   error: /".foo, :global\(\.bar\)" is not pure/,
   // },
   // {
   //   should: 'throw on not pure selector (with multiple 2)',
   //   input: ':global(.bar), .foo {}',
   //   options: { mode: 'pure' },
-  //   error: /":global\(\.bar\), .foo" is not pure/
+  //   error: /":global\(\.bar\), .foo" is not pure/,
   // },
   // {
   //   should: 'throw on not pure selector (element)',
   //   input: 'input {}',
   //   options: { mode: 'pure' },
-  //   error: /"input" is not pure/
+  //   error: /"input" is not pure/,
   // },
   // {
   //   should: 'throw on not pure selector (attribute)',
   //   input: '[type="radio"] {}',
   //   options: { mode: 'pure' },
-  //   error: /"\[type="radio"\]" is not pure/
+  //   error: /"\[type="radio"\]" is not pure/,
   // },
   // {
   //   should: 'throw on not pure keyframes',
   //   input: '@keyframes :global(foo) {}',
   //   options: { mode: 'pure' },
-  //   error: /@keyframes :global\(\.\.\.\) is not allowed in pure mode/
+  //   error: /@keyframes :global\(\.\.\.\) is not allowed in pure mode/,
   // },
   // {
   //   should: 'pass through global element',
   //   input: 'input {}',
-  //   expected: 'input {}'
+  //   expected: 'input {}',
   // },
   // {
   //   should: 'localise class and pass through element',
   //   input: '.foo input {}',
-  //   expected: ':local(.foo) input {}'
+  //   expected: ':local(.foo) input {}',
   // },
   // {
   //   should: 'pass through attribute selector',
   //   input: '[type="radio"] {}',
-  //   expected: '[type="radio"] {}'
+  //   expected: '[type="radio"] {}',
   // },
   // {
   //   should: 'not modify urls without option',
@@ -430,7 +435,7 @@ const tests = [
   //   expected:
   //     ':local(.a) { background: url(./image.png); }\n' +
   //     '.b { background: url(image.png); }\n' +
-  //     ':local(.c) { background: url("./image.png"); }'
+  //     ':local(.c) { background: url("./image.png"); }',
   // },
   // {
   //   should: 'rewrite url in local block',
@@ -438,7 +443,7 @@ const tests = [
   //     '.a { background: url(./image.png); }\n' +
   //     ':global .b { background: url(image.png); }\n' +
   //     '.c { background: url("./image.png"); }\n' +
-  //     '.c { background: url(\'./image.png\'); }\n' +
+  //     ".c { background: url('./image.png'); }\n" +
   //     '.d { background: -webkit-image-set(url("./image.png") 1x, url("./image2x.png") 2x); }\n' +
   //     '@font-face { src: url("./font.woff"); }\n' +
   //     '@-webkit-font-face { src: url("./font.woff"); }\n' +
@@ -450,7 +455,7 @@ const tests = [
   //     rewriteUrl: function(global, url) {
   //       const mode = global ? 'global' : 'local';
   //       return '(' + mode + ')' + url + '"' + mode + '"';
-  //     }
+  //     },
   //   },
   //   expected:
   //     ':local(.a) { background: url((local\\)./image.png\\"local\\"); }\n' +
@@ -468,7 +473,7 @@ const tests = [
   // {
   //   should: 'not crash on atrule without nodes',
   //   input: '@charset "utf-8";',
-  //   expected: '@charset "utf-8";'
+  //   expected: '@charset "utf-8";',
   // },
   // {
   //   should: 'not crash on a rule without nodes',
@@ -480,32 +485,32 @@ const tests = [
   //     return root;
   //   })(),
   //   // postcss-less's stringify would honor `ruleWithoutBody` and omit the trailing `{}`
-  //   expected: ':local(.a) {\n    :local(.b) {}\n}'
+  //   expected: ':local(.a) {\n    :local(.b) {}\n}',
   // },
   // {
   //   should: 'not break unicode characters',
   //   input: '.a { content: "\\2193" }',
-  //   expected: ':local(.a) { content: "\\2193" }'
+  //   expected: ':local(.a) { content: "\\2193" }',
   // },
   // {
   //   should: 'not break unicode characters',
   //   input: '.a { content: "\\2193\\2193" }',
-  //   expected: ':local(.a) { content: "\\2193\\2193" }'
+  //   expected: ':local(.a) { content: "\\2193\\2193" }',
   // },
   // {
   //   should: 'not break unicode characters',
   //   input: '.a { content: "\\2193 \\2193" }',
-  //   expected: ':local(.a) { content: "\\2193 \\2193" }'
+  //   expected: ':local(.a) { content: "\\2193 \\2193" }',
   // },
   // {
   //   should: 'not break unicode characters',
   //   input: '.a { content: "\\2193\\2193\\2193" }',
-  //   expected: ':local(.a) { content: "\\2193\\2193\\2193" }'
+  //   expected: ':local(.a) { content: "\\2193\\2193\\2193" }',
   // },
   // {
   //   should: 'not break unicode characters',
   //   input: '.a { content: "\\2193 \\2193 \\2193" }',
-  //   expected: ':local(.a) { content: "\\2193 \\2193 \\2193" }'
+  //   expected: ':local(.a) { content: "\\2193 \\2193 \\2193" }',
   // },
 ];
 
