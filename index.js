@@ -4,7 +4,7 @@ const postcss = require('postcss');
 const selectorParser = require('postcss-selector-parser');
 const valueParser = require('postcss-value-parser');
 
-const IS_GLOBAL = Symbol('is global');
+const isSpacing = node => node.type === 'combinator' && node.value === ' ';
 
 function normalizeNodeArray(nodes) {
   const array = [];
@@ -25,27 +25,7 @@ function normalizeNodeArray(nodes) {
   return array;
 }
 
-function checkForInconsistentRule(node, current, context) {
-  if (context.global !== context.lastIsGlobal)
-    throw new Error(
-      'Inconsistent rule global/local result in rule "' +
-        String(node) +
-        '" (multiple selectors must result in the same mode for the rule)'
-    );
-}
-const isSpacing = node => node.type === 'combinator' && node.value === ' ';
-
-function trimSelectors(selector) {
-  let last;
-  while (
-    (last = selector.last) &&
-    (last.type === 'combinator' && last.value === ' ')
-  ) {
-    last.remove();
-  }
-}
-
-function localizeNodez(rule, mode, options) {
+function localizeNode(rule, mode, options) {
   const isScopePseudo = node =>
     node.value === ':local' || node.value === ':global';
 
@@ -87,7 +67,6 @@ function localizeNodez(rule, mode, options) {
         context.global = resultingGlobal;
 
         node.nodes = normalizeNodeArray(newNodes);
-        // console.log(node.nodes);
         break;
       }
       case 'selector': {
@@ -95,19 +74,19 @@ function localizeNodez(rule, mode, options) {
 
         node = node.clone();
         node.nodes = normalizeNodeArray(newNodes);
-        console.log('SECLE', node.toString());
         break;
       }
       case 'combinator': {
-        if (!isSpacing(node)) break;
-
-        if (context.ignoreNextSpacing) {
-          context.ignoreNextSpacing = false;
-          context.lastWasSpacing = false;
-          context.enforceNoSpacing = false;
-          return null;
+        if (isSpacing(node)) {
+          if (context.ignoreNextSpacing) {
+            context.ignoreNextSpacing = false;
+            context.lastWasSpacing = false;
+            context.enforceNoSpacing = false;
+            return null;
+          }
+          context.lastWasSpacing = true;
+          return node;
         }
-        context.lastWasSpacing = true;
         break;
       }
       case 'pseudo': {
@@ -132,7 +111,6 @@ function localizeNodez(rule, mode, options) {
               hasLocals: false,
               explicit: true,
             };
-            // console.log('PSUDI', node.nodes);
 
             newNodes = node
               .map(childNode => transform(childNode, childContext))
@@ -147,12 +125,9 @@ function localizeNodez(rule, mode, options) {
               first.spaces = { before, after: first.spaces.after };
               last.spaces = { before: last.spaces.before, after };
             }
-            console.log('PSUDI', node);
+
             node = newNodes;
 
-            // // don't leak spacing
-            // node[0].spaces.before = '';
-            // node[node.length - 1].spaces.after = '';
             break;
           } else {
             childContext = {
@@ -185,28 +160,33 @@ function localizeNodez(rule, mode, options) {
             );
           }
 
-          const next = node.next();
-          console.log('SPACESS', next, node.spaces);
-          if (next) next.spaces = node.spaces;
+          const next = node.parent;
+          const addBackSpacing = !!node.spaces.before;
 
           context.ignoreNextSpacing = context.lastWasSpacing
             ? node.value
             : false;
+
           context.enforceNoSpacing = context.lastWasSpacing
             ? false
             : node.value;
+
           context.global = node.value === ':global';
           context.explicit = true;
-          return null;
+
+          // because this node has spacing that is lost when we remove it
+          // we make up for it by adding an extra combinator in since adding
+          // spacing on the parent selector doesn't work
+          return addBackSpacing
+            ? selectorParser.combinator({ value: ' ' })
+            : null;
         }
         break;
       }
       case 'id':
       case 'class': {
         if (!context.global) {
-          console.log('REPLCE', node.spaces);
           const innerNode = node.clone();
-          console.log(innerNode);
           innerNode.spaces = { before: '', after: '' };
 
           node = selectorParser.pseudo({
@@ -214,7 +194,7 @@ function localizeNodez(rule, mode, options) {
             nodes: [innerNode],
             spaces: node.spaces,
           });
-          // console.log('HERE');
+
           context.hasLocals = true;
         }
 
@@ -233,11 +213,11 @@ function localizeNodez(rule, mode, options) {
     hasPureGlobals: false,
   };
 
-  const updatedRule = selectorParser(root => {
+  const selector = selectorParser(root => {
     transform(root, rootContext);
-  }).processSync(rule, { updateSelector: true, lossless: true });
+  }).processSync(rule, { updateSelector: false, lossless: true });
 
-  // console.log('HERE', rule.selector);
+  rootContext.selector = selector;
   return rootContext;
 }
 
@@ -479,7 +459,9 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
         return;
       }
 
-      const context = localizeNodez(rule, options.mode, options);
+      const context = localizeNode(rule, options.mode);
+
+      context.options = options;
 
       if (pureMode && context.hasPureGlobals) {
         throw rule.error(
@@ -489,12 +471,10 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
             '(pure selectors must contain at least one local class or id)'
         );
       }
+      rule.selector = context.selector;
       // Less-syntax mixins parse as rules with no nodes
       if (rule.nodes) {
-        rule.nodes.forEach(function(decl) {
-          console.log(context);
-          localizeDecl(decl, context);
-        });
+        rule.nodes.forEach(decl => localizeDecl(decl, context));
       }
     });
   };
