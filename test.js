@@ -66,11 +66,11 @@ const tests = [
   //   input: ':global .foo, :global .bar {}',
   //   expected: '.foo, .bar {}',
   // },
-  // {
-  //   should: 'allow multiple broad local selectors',
-  //   input: ':local .foo, :local .bar {}',
-  //   expected: ':local(.foo), :local(.bar) {}',
-  // },
+  {
+    should: 'allow multiple broad local selectors',
+    input: ':local .foo, :local .bar {}',
+    expected: ':local(.foo), :local(.bar) {}',
+  },
   // {
   //   should: 'allow narrow global selectors nested inside local styles',
   //   input: '.foo :global(.foo .bar) {}',
@@ -329,11 +329,11 @@ const tests = [
   //   input: ':global(input) {}',
   //   expected: 'input {}',
   // },
-  {
-    should: 'compile explict global attribute',
-    input: ':global([type="radio"]), :not(:global [type="radio"]) {}',
-    expected: '[type="radio"], :not([type="radio"]) {}',
-  },
+  // {
+  //   should: 'compile explict global attribute',
+  //   input: ':global([type="radio"]), :not(:global [type="radio"]) {}',
+  //   expected: '[type="radio"], :not([type="radio"]) {}',
+  // },
   // {
   //   should: 'throw on invalid mode',
   //   input: '',

@@ -19,20 +19,21 @@ function normalizeNodeArray(nodes) {
     }
   });
 
-  if (array.length > 0 && array[array.length - 1].type === 'spacing') {
+  if (array.length > 0 && isSpacing(array[array.length - 1])) {
     array.pop();
   }
   return array;
 }
 
 function checkForInconsistentRule(node, current, context) {
-  if (context.isGlobal !== context.lastIsGlobal)
+  if (context.global !== context.lastIsGlobal)
     throw new Error(
       'Inconsistent rule global/local result in rule "' +
         String(node) +
         '" (multiple selectors must result in the same mode for the rule)'
     );
 }
+const isSpacing = node => node.type === 'combinator' && node.value === ' ';
 
 function trimSelectors(selector) {
   let last;
@@ -45,155 +46,174 @@ function trimSelectors(selector) {
 }
 
 function localizeNodez(rule, mode, options) {
-  // console.log(mode);
   const isScopePseudo = node =>
     node.value === ':local' || node.value === ':global';
 
   const transform = (node, context) => {
+    if (context.ignoreNextSpacing && !isSpacing(node)) {
+      throw new Error('Missing whitespace after ' + context.ignoreNextSpacing);
+    }
+    if (context.enforceNoSpacing && isSpacing(node)) {
+      throw new Error('Missing whitespace before ' + context.enforceNoSpacing);
+    }
+
+    let newNodes;
     switch (node.type) {
       case 'root': {
-        const childContext = { ...context };
-        let overallIsGlobal;
-
-        node.each(childNode => {
-          // isGlobal and hasLocals should not carry over across selectors:
-          // `:global .foo, .bar -> .foo, :local(.bar)`
-          childContext.isGlobal = context.isGlobal;
-          childContext.hasLocals = false;
-
-          transform(childNode, childContext);
-
-          console.log(overallIsGlobal, childContext);
-
-          if (overallIsGlobal == null) {
-            overallIsGlobal = childContext.isGlobal;
-          } else {
-            if (overallIsGlobal !== childContext.isGlobal)
-              throw new Error(
-                'Inconsistent rule global/local result in rule "' +
-                  String(node) +
-                  '" (multiple selectors must result in the same mode for the rule)'
-              );
+        let resultingGlobal;
+        context.hasPureGlobals = false;
+        newNodes = node.nodes.map(function(n) {
+          const nContext = {
+            global: context.global,
+            lastWasSpacing: true,
+            hasLocals: false,
+            explicit: false,
+          };
+          n = transform(n, nContext);
+          if (typeof resultingGlobal === 'undefined') {
+            resultingGlobal = nContext.global;
+          } else if (resultingGlobal !== nContext.global) {
+            throw new Error(
+              'Inconsistent rule global/local result in rule "' +
+                node +
+                '" (multiple selectors must result in the same mode for the rule)'
+            );
           }
-
-          if (childContext.hasLocals) {
-            context.hasPureGlobals = false;
+          if (!nContext.hasLocals) {
+            context.hasPureGlobals = true;
           }
+          return n;
         });
+        context.global = resultingGlobal;
 
+        node.nodes = normalizeNodeArray(newNodes);
+        // console.log(node.nodes);
         break;
       }
       case 'selector': {
-        node.each(childNode => transform(childNode, context));
+        newNodes = node.map(childNode => transform(childNode, context));
 
-        trimSelectors(node);
-
+        node = node.clone();
+        node.nodes = normalizeNodeArray(newNodes);
+        console.log('SECLE', node.toString());
         break;
       }
       case 'combinator': {
-        if (
-          node.value === ' ' &&
-          (context.shouldTrimTrainingWhitespace || !node.next())
-        ) {
-          //console.log('COMBIN', node.spaces);
-          context.shouldTrimTrainingWhitespace = false;
-          node.remove();
+        if (!isSpacing(node)) break;
+
+        if (context.ignoreNextSpacing) {
+          context.ignoreNextSpacing = false;
+          context.lastWasSpacing = false;
+          context.enforceNoSpacing = false;
+          return null;
         }
+        context.lastWasSpacing = true;
         break;
       }
       case 'pseudo': {
-        if (!isScopePseudo(node)) {
-          // This needs to not update `isGlobal` for tests to pass
-          // the behavior seems _wrong_ tho.
-          const childContext = { ...context };
-          console.log('PSEUEDO', node.value, context);
-          node.each(childNode => transform(childNode, context));
-          break;
-        }
-
-        if (context.inside) {
-          throw new Error(
-            `A ${node.value} is not allowed inside of a ${context.inside}(...)`
-          );
-        }
-
+        let childContext;
         const isNested = !!node.length;
-        const isGlobal = node.value === ':global';
-        if (!isNested) {
-          context.isGlobal = isGlobal;
+        const isScoped = isScopePseudo(node);
 
-          context.shouldTrimTrainingWhitespace = !node.spaces.before;
-          // console.log(node.spaces);
-          node.remove();
+        // :local(.foo)
+        if (isNested) {
+          if (isScoped) {
+            if (context.inside) {
+              throw new Error(
+                `A ${node.value} is not allowed inside of a ${
+                  context.inside
+                }(...)`
+              );
+            }
+
+            childContext = {
+              global: node.value === ':global',
+              inside: node.value,
+              hasLocals: false,
+              explicit: true,
+            };
+            // console.log('PSUDI', node.nodes);
+
+            newNodes = node
+              .map(childNode => transform(childNode, childContext))
+              .reduce((acc, next) => acc.concat(next.nodes), []);
+
+            if (newNodes.length) {
+              const { before, after } = node.spaces;
+
+              const first = newNodes[0];
+              const last = newNodes[newNodes.length - 1];
+
+              first.spaces = { before, after: first.spaces.after };
+              last.spaces = { before: last.spaces.before, after };
+            }
+            console.log('PSUDI', node);
+            node = newNodes;
+
+            // // don't leak spacing
+            // node[0].spaces.before = '';
+            // node[node.length - 1].spaces.after = '';
+            break;
+          } else {
+            childContext = {
+              global: context.global,
+              inside: context.inside,
+              lastWasSpacing: true,
+              hasLocals: false,
+              explicit: context.explicit,
+            };
+            newNodes = node.map(childNode =>
+              transform(childNode, childContext)
+            );
+
+            node = node.clone();
+            node.nodes = normalizeNodeArray(newNodes);
+
+            if (childContext.hasLocals) {
+              context.hasLocals = true;
+            }
+          }
+          break;
+
+          //:local .foo .bar
+        } else if (isScoped) {
+          if (context.inside) {
+            throw new Error(
+              `A ${node.value} is not allowed inside of a ${
+                context.inside
+              }(...)`
+            );
+          }
+
+          const next = node.next();
+          console.log('SPACESS', next, node.spaces);
+          if (next) next.spaces = node.spaces;
+
+          context.ignoreNextSpacing = context.lastWasSpacing
+            ? node.value
+            : false;
+          context.enforceNoSpacing = context.lastWasSpacing
+            ? false
+            : node.value;
+          context.global = node.value === ':global';
+          context.explicit = true;
           return null;
         }
-
-        const childContext = {
-          ...context,
-          isGlobal,
-          inside: node.value,
-          hasLocals: false,
-        };
-
-        // The nodes of a psuedo will be Selectors, which we want to flatten
-        // into the parent
-        const nodes = node
-          .clone()
-          .map(childNode => transform(childNode, childContext))
-          .reduce(
-            (acc, next) =>
-              acc.concat(next.type === 'selector' ? next.nodes : next),
-            []
-          );
-        // console.log(context);
-        if (childContext.hasLocals) {
-          context.hasLocals = true;
-        }
-
-        // console.log('asfasfasf', nodes);
-
-        if (nodes.length) {
-          const { before, after } = node.spaces;
-
-          const first = nodes[0];
-          const last = nodes[node.length - 1];
-
-          first.spaces = { before, after: first.spaces.after };
-          last.spaces = { before: last.spaces.before, after };
-        }
-
-        nodes.forEach(childNode => {
-          node.parent.insertBefore(node, childNode);
-        });
-        node.remove();
-        // const parent = node.parent;
-        // node.replaceWith(nodes[0].nodes);
-        // console.log('asfasfasf', nodes, String(parent.parent));
-        return nodes;
+        break;
       }
       case 'id':
       case 'class': {
-        const spaces = { ...node.spaces };
-
-        if (context.shouldTrimTrainingWhitespace) {
-          // console.log('HEREEEEEE', spaces);
-          spaces.before = '';
-          context.shouldTrimTrainingWhitespace = false;
-        }
-
-        if (!context.isGlobal) {
-          // console.log('REPLCE', node.spaces);
+        if (!context.global) {
+          console.log('REPLCE', node.spaces);
           const innerNode = node.clone();
+          console.log(innerNode);
           innerNode.spaces = { before: '', after: '' };
 
-          // console.log(node);
-          node.replaceWith(
-            selectorParser.pseudo({
-              value: ':local',
-              nodes: [innerNode],
-              spaces,
-            })
-          );
+          node = selectorParser.pseudo({
+            value: ':local',
+            nodes: [innerNode],
+            spaces: node.spaces,
+          });
           // console.log('HERE');
           context.hasLocals = true;
         }
@@ -201,13 +221,16 @@ function localizeNodez(rule, mode, options) {
         break;
       }
     }
+
+    context.lastWasSpacing = false;
+    context.ignoreNextSpacing = false;
+    context.enforceNoSpacing = false;
     return node;
   };
 
-  const isGlobal = mode === 'global';
   const rootContext = {
-    isGlobal,
-    hasPureGlobals: true,
+    global: mode === 'global',
+    hasPureGlobals: false,
   };
 
   const updatedRule = selectorParser(root => {
@@ -239,7 +262,7 @@ function localizeDeclNode(node, context) {
           }
 
           let newUrl = context.options.rewriteUrl(
-            context.isGlobal,
+            context.global,
             nestedNode.value
           );
 
@@ -349,8 +372,8 @@ function localizeAnimationShorthandDeclValues(decl, context) {
 
     const subContext = {
       options: context.options,
-      isGlobal: context.isGlobal,
-      localizeNextItem: shouldParseAnimationName && !context.isGlobal,
+      global: context.global,
+      localizeNextItem: shouldParseAnimationName && !context.global,
     };
     return localizeDeclNode(node, subContext);
   });
@@ -363,8 +386,8 @@ function localizeDeclValues(localize, decl, context) {
   valueNodes.walk((node, index, nodes) => {
     const subContext = {
       options: context.options,
-      isGlobal: context.isGlobal,
-      localizeNextItem: localize && !context.isGlobal,
+      global: context.global,
+      localizeNextItem: localize && !context.global,
     };
     nodes[index] = localizeDeclNode(node, subContext);
   });
@@ -433,7 +456,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
         atrule.walkDecls(function(decl) {
           localizeDecl(decl, {
             options: options,
-            isGlobal: globalKeyframes,
+            global: globalKeyframes,
           });
         });
       } else if (atrule.nodes) {
@@ -441,7 +464,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
           if (decl.type === 'decl') {
             localizeDecl(decl, {
               options: options,
-              isGlobal: globalMode,
+              global: globalMode,
             });
           }
         });
