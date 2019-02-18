@@ -532,6 +532,74 @@ const tests = [
     input: ':root { --title-align: center; --sr-only: { position: absolute; } }',
     expected: ':root { --title-align: center; --sr-only: { position: absolute; } }',
   },
+  /**
+   * Imported aliases
+   */
+  {
+    should: 'not localize imported alias',
+    input: `
+      :import(foo) { a_value: some-value; }
+
+      .foo > .a_value { }
+    `,
+    expected: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.foo) > .a_value { }
+    `
+  },
+  {
+    should: 'not localize nested imported alias',
+    input: `
+      :import(foo) { a_value: some-value; }
+
+      .foo > .a_value > .bar { }
+    `,
+    expected: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.foo) > .a_value > :local(.bar) { }
+    `
+  },
+  {
+    should: 'not localize open ended imported alias',
+    input: `
+      :import(foo) { a_value: some-value; }
+
+      :local .foo .a_value .bar { }
+    `,
+    expected: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.foo) .a_value :local(.bar) { }
+    `
+  },
+  {
+    should: 'ignore imported in explicit local',
+    input: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.a_value) { }
+    `,
+    expected: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.a_value) { }
+    `
+  },
+  {
+    should: 'maintain explicit local',
+    input: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.a_value, .foo) .a_value { }
+    `,
+    expected: `
+      :import(foo) { a_value: some-value; }
+
+      :local(.a_value) :local(.foo) .a_value { }
+    `
+  }
 ];
 
 function process(css, options) {
