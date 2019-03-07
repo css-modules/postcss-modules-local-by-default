@@ -469,7 +469,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
           atrule.params = localMatch[0];
           globalKeyframes = false;
         } else if (!globalMode) {
-          if (!localAliasMap.has(atrule.params))
+          if (atrule.params && !localAliasMap.has(atrule.params))
             atrule.params = ':local(' + atrule.params + ')';
         }
         atrule.walkDecls(function(decl) {
