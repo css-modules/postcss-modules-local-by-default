@@ -529,8 +529,10 @@ const tests = [
   },
   {
     should: 'not ignore custom property set',
-    input: ':root { --title-align: center; --sr-only: { position: absolute; } }',
-    expected: ':root { --title-align: center; --sr-only: { position: absolute; } }',
+    input:
+      ':root { --title-align: center; --sr-only: { position: absolute; } }',
+    expected:
+      ':root { --title-align: center; --sr-only: { position: absolute; } }',
   },
   /**
    * Imported aliases
@@ -546,7 +548,7 @@ const tests = [
       :import(foo) { a_value: some-value; }
 
       :local(.foo) > .a_value { }
-    `
+    `,
   },
   {
     should: 'not localize nested imported alias',
@@ -559,21 +561,9 @@ const tests = [
       :import(foo) { a_value: some-value; }
 
       :local(.foo) > .a_value > :local(.bar) { }
-    `
-  },
-  {
-    should: 'not localize open ended imported alias',
-    input: `
-      :import(foo) { a_value: some-value; }
-
-      :local .foo .a_value .bar { }
     `,
-    expected: `
-      :import(foo) { a_value: some-value; }
-
-      :local(.foo) .a_value :local(.bar) { }
-    `
   },
+
   {
     should: 'ignore imported in explicit local',
     input: `
@@ -585,21 +575,47 @@ const tests = [
       :import(foo) { a_value: some-value; }
 
       :local(.a_value) { }
-    `
+    `,
   },
   {
-    should: 'maintain explicit local',
+    should: 'escape local context with explict global',
     input: `
       :import(foo) { a_value: some-value; }
 
-      :local(.a_value, .foo) .a_value { }
+      :local .foo :global(.a_value) .bar { }
     `,
     expected: `
       :import(foo) { a_value: some-value; }
 
-      :local(.a_value) :local(.foo) .a_value { }
-    `
-  }
+      :local(.foo) .a_value :local(.bar) { }
+    `,
+  },
+  {
+    should: 'respect explicit local',
+    input: `
+      :import(foo) { a_value: some-value; }
+
+      .a_value :local .a_value .foo :global .a_value { }
+    `,
+    expected: `
+      :import(foo) { a_value: some-value; }
+
+      .a_value :local(.a_value) :local(.foo) .a_value { }
+    `,
+  },
+  {
+    should: 'not localize imported animation-name',
+    input: `
+      :import(file) { a_value: some-value; }
+
+      .foo { animation-name: a_value; }
+    `,
+    expected: `
+      :import(file) { a_value: some-value; }
+
+      :local(.foo) { animation-name: a_value; }
+    `,
+  },
 ];
 
 function process(css, options) {

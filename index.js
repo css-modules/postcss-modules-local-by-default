@@ -3,23 +3,23 @@
 const postcss = require('postcss');
 const selectorParser = require('postcss-selector-parser');
 const valueParser = require('postcss-value-parser');
+const { extractICSS } = require('icss-utils');
 
 const isSpacing = node => node.type === 'combinator' && node.value === ' ';
 
 function getImportLocalAliases(icssImports) {
   const localAliases = new Map();
-  Object.keys(icssImports).forEach((key) => {
-    Object.keys(icssImports[key]).forEach((prop) => {
-      localAliases.set(prop, icssImports[key][prop])
-    })
-  })
+  Object.keys(icssImports).forEach(key => {
+    Object.keys(icssImports[key]).forEach(prop => {
+      localAliases.set(prop, icssImports[key][prop]);
+    });
+  });
   return localAliases;
 }
 
 function maybeLocalizeValue(value, localAliasMap) {
-  if (localAliasMap.has(value)) return value
+  if (localAliasMap.has(value)) return value;
 }
-
 
 function normalizeNodeArray(nodes) {
   const array = [];
@@ -40,7 +40,7 @@ function normalizeNodeArray(nodes) {
   return array;
 }
 
-function localizeNode(rule, mode, options) {
+function localizeNode(rule, mode, localAliasMap) {
   const isScopePseudo = node =>
     node.value === ':local' || node.value === ':global';
 
@@ -206,11 +206,14 @@ function localizeNode(rule, mode, options) {
       }
       case 'id':
       case 'class': {
-        const isGlobalImportedValue = !context.inside && context.localAliasMap.has(node.name)
+        if (context.global) {
+          break;
+        }
 
-        // console.log('HERE', node)
-        if (!context.global && !isGlobalImportedValue) {
+        const isImportedValue = localAliasMap.has(node.value);
+        const isImportedWithExplicitScope = isImportedValue && context.explicit;
 
+        if (!isImportedValue || isImportedWithExplicitScope) {
           const innerNode = node.clone();
           innerNode.spaces = { before: '', after: '' };
 
@@ -250,9 +253,7 @@ function localizeDeclNode(node, context) {
   switch (node.type) {
     case 'word':
       if (context.localizeNextItem) {
-        console.log('HERE', context, node.value)
         if (!context.localAliasMap.has(node.value)) {
-
           node.value = ':local(' + node.value + ')';
           context.localizeNextItem = false;
         }
@@ -449,7 +450,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
 
   return function(css) {
     const { icssImports } = extractICSS(css, false);
-    const localAliasMap = getImportLocalAliases(icssImports)
+    const localAliasMap = getImportLocalAliases(icssImports);
 
     css.walkAtRules(function(atrule) {
       if (/keyframes$/i.test(atrule.name)) {
@@ -468,7 +469,6 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
           atrule.params = localMatch[0];
           globalKeyframes = false;
         } else if (!globalMode) {
-          // console.log('HERE', context)
           if (!localAliasMap.has(atrule.params))
             atrule.params = ':local(' + atrule.params + ')';
         }
@@ -510,10 +510,10 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
         return;
       }
 
-      const context = localizeNode(rule, options.mode,
-        localAliasMap);
+      const context = localizeNode(rule, options.mode, localAliasMap);
 
       context.options = options;
+      context.localAliasMap = localAliasMap;
 
       if (pureMode && context.hasPureGlobals) {
         throw rule.error(
