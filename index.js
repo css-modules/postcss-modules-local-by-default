@@ -494,6 +494,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
 
     css.walkRules(function(rule) {
       if (
+        rule.parent &&
         rule.parent.type === 'atrule' &&
         /keyframes$/i.test(rule.parent.name)
       ) {
