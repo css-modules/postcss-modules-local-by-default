@@ -23,10 +23,10 @@
     "trailingComma": "es5"
   },
   "dependencies": {
-    "icss-utils": "^4.0.0",
-    "postcss": "^7.0.6",
-    "postcss-selector-parser": "^6.0.0",
-    "postcss-value-parser": "^3.3.1"
+    "icss-utils": "^4.1.1",
+    "postcss": "^7.0.16",
+    "postcss-selector-parser": "^6.0.2",
+    "postcss-value-parser": "^4.0.0"
   },
   "devDependencies": {
     "chokidar-cli": "^1.0.1",
