@@ -119,6 +119,10 @@ function localizeNode(rule, mode, localAliasMap) {
         // :local(.foo)
         if (isNested) {
           if (isScoped) {
+            if (node.nodes.length === 0) {
+              throw new Error(`${node.value}() can't be empty`);
+            }
+
             if (context.inside) {
               throw new Error(
                 `A ${node.value} is not allowed inside of a ${
@@ -206,6 +210,10 @@ function localizeNode(rule, mode, localAliasMap) {
       }
       case 'id':
       case 'class': {
+        if (!node.value) {
+          throw new Error('Invalid class or id selector syntax');
+        }
+
         if (context.global) {
           break;
         }

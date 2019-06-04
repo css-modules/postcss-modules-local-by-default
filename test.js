@@ -616,6 +616,44 @@ const tests = [
       :local(.foo) { animation-name: a_value; }
     `,
   },
+  {
+    should: 'throw on invalid syntax id usage',
+    input: '. {}',
+    error: /Invalid class or id selector syntax/,
+  },
+  {
+    should: 'throw on invalid syntax class usage',
+    input: '# {}',
+    error: /Invalid class or id selector syntax/,
+  },
+  {
+    should: 'throw on invalid syntax local class usage',
+    input: ':local(.) {}',
+    error: /Invalid class or id selector syntax/,
+  },
+  {
+    should: 'throw on invalid syntax local id usage',
+    input: ':local(#) {}',
+    error: /Invalid class or id selector syntax/,
+  },
+  {
+    should: 'throw on invalid global class usage',
+    input: ':global(.) {}',
+    error: /Invalid class or id selector syntax/,
+  },
+  {
+    should: 'throw on invalid global class usage',
+    input: ':global(#) {}',
+    error: /Invalid class or id selector syntax/,
+  },
+  /*
+  Bug in postcss-selector-parser
+  {
+    should: 'throw on invalid global class usage',
+    input: ':global() {}',
+    error: /:global\(\) can't be empty/
+  },
+  */
 ];
 
 function process(css, options) {
