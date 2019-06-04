@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.2] - 2019-06-05
+### Fixed
+- better handle invalid syntax
+
 ## [3.0.1] - 2019-05-16
 ### Fixed
 - adds safety check before accessing "rule parent"
