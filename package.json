@@ -29,7 +29,7 @@
     "postcss-value-parser": "^4.1.0"
   },
   "devDependencies": {
-    "chokidar-cli": "^2.1.0",
+    "chokidar-cli": "^1.2.3",
     "codecov.io": "^0.1.6",
     "coveralls": "^3.1.0",
     "eslint": "^7.5.0",
