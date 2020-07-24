@@ -32,7 +32,7 @@
     "chokidar-cli": "^1.2.3",
     "codecov.io": "^0.1.6",
     "coveralls": "^3.1.0",
-    "eslint": "^7.5.0",
+    "eslint": "^5.16.0",
     "istanbul": "^0.4.5",
     "tape": "^5.0.1"
   },
