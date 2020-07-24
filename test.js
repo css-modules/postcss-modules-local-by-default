@@ -654,6 +654,18 @@ const tests = [
     error: /:global\(\) can't be empty/
   },
   */
+  {
+    should: 'consider :import statements pure',
+    input: ':import("~/lol.css") { foo: __foo; }',
+    options: { mode: 'pure' },
+    expected: ':import("~/lol.css") { foo: __foo; }',
+  },
+  {
+    should: 'consider :export statements pure',
+    input: ':export { foo: __foo; }',
+    options: { mode: 'pure' },
+    expected: ':export { foo: __foo; }',
+  },
 ];
 
 function process(css, options) {
