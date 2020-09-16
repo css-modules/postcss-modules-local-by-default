@@ -1,32 +1,30 @@
-'use strict';
+"use strict";
 
-const postcss = require('postcss');
-const selectorParser = require('postcss-selector-parser');
-const valueParser = require('postcss-value-parser');
-const { extractICSS } = require('icss-utils');
+const postcss = require("postcss");
+const selectorParser = require("postcss-selector-parser");
+const valueParser = require("postcss-value-parser");
+const { extractICSS } = require("icss-utils");
 
-const isSpacing = node => node.type === 'combinator' && node.value === ' ';
+const isSpacing = (node) => node.type === "combinator" && node.value === " ";
 
 function getImportLocalAliases(icssImports) {
   const localAliases = new Map();
-  Object.keys(icssImports).forEach(key => {
-    Object.keys(icssImports[key]).forEach(prop => {
+
+  Object.keys(icssImports).forEach((key) => {
+    Object.keys(icssImports[key]).forEach((prop) => {
       localAliases.set(prop, icssImports[key][prop]);
     });
   });
-  return localAliases;
-}
 
-function maybeLocalizeValue(value, localAliasMap) {
-  if (localAliasMap.has(value)) return value;
+  return localAliases;
 }
 
 function normalizeNodeArray(nodes) {
   const array = [];
 
-  nodes.forEach(function(x) {
+  nodes.forEach(function (x) {
     if (Array.isArray(x)) {
-      normalizeNodeArray(x).forEach(function(item) {
+      normalizeNodeArray(x).forEach(function (item) {
         array.push(item);
       });
     } else if (x) {
@@ -41,27 +39,27 @@ function normalizeNodeArray(nodes) {
 }
 
 function localizeNode(rule, mode, localAliasMap) {
-  const isScopePseudo = node =>
-    node.value === ':local' || node.value === ':global';
-  const isImportExportPseudo = node =>
-    node.value === ':import' || node.value === ':export';
+  const isScopePseudo = (node) =>
+    node.value === ":local" || node.value === ":global";
+  const isImportExportPseudo = (node) =>
+    node.value === ":import" || node.value === ":export";
 
   const transform = (node, context) => {
     if (context.ignoreNextSpacing && !isSpacing(node)) {
-      throw new Error('Missing whitespace after ' + context.ignoreNextSpacing);
+      throw new Error("Missing whitespace after " + context.ignoreNextSpacing);
     }
     if (context.enforceNoSpacing && isSpacing(node)) {
-      throw new Error('Missing whitespace before ' + context.enforceNoSpacing);
+      throw new Error("Missing whitespace before " + context.enforceNoSpacing);
     }
 
     let newNodes;
     switch (node.type) {
-      case 'root': {
+      case "root": {
         let resultingGlobal;
 
         context.hasPureGlobals = false;
 
-        newNodes = node.nodes.map(function(n) {
+        newNodes = node.nodes.map(function (n) {
           const nContext = {
             global: context.global,
             lastWasSpacing: true,
@@ -71,7 +69,7 @@ function localizeNode(rule, mode, localAliasMap) {
 
           n = transform(n, nContext);
 
-          if (typeof resultingGlobal === 'undefined') {
+          if (typeof resultingGlobal === "undefined") {
             resultingGlobal = nContext.global;
           } else if (resultingGlobal !== nContext.global) {
             throw new Error(
@@ -93,14 +91,14 @@ function localizeNode(rule, mode, localAliasMap) {
         node.nodes = normalizeNodeArray(newNodes);
         break;
       }
-      case 'selector': {
-        newNodes = node.map(childNode => transform(childNode, context));
+      case "selector": {
+        newNodes = node.map((childNode) => transform(childNode, context));
 
         node = node.clone();
         node.nodes = normalizeNodeArray(newNodes);
         break;
       }
-      case 'combinator': {
+      case "combinator": {
         if (isSpacing(node)) {
           if (context.ignoreNextSpacing) {
             context.ignoreNextSpacing = false;
@@ -113,7 +111,7 @@ function localizeNode(rule, mode, localAliasMap) {
         }
         break;
       }
-      case 'pseudo': {
+      case "pseudo": {
         let childContext;
         const isNested = !!node.length;
         const isScoped = isScopePseudo(node);
@@ -121,7 +119,7 @@ function localizeNode(rule, mode, localAliasMap) {
 
         if (isImportExport) {
           context.hasLocals = true;
-        // :local(.foo)
+          // :local(.foo)
         } else if (isNested) {
           if (isScoped) {
             if (node.nodes.length === 0) {
@@ -130,21 +128,19 @@ function localizeNode(rule, mode, localAliasMap) {
 
             if (context.inside) {
               throw new Error(
-                `A ${node.value} is not allowed inside of a ${
-                  context.inside
-                }(...)`
+                `A ${node.value} is not allowed inside of a ${context.inside}(...)`
               );
             }
 
             childContext = {
-              global: node.value === ':global',
+              global: node.value === ":global",
               inside: node.value,
               hasLocals: false,
               explicit: true,
             };
 
             newNodes = node
-              .map(childNode => transform(childNode, childContext))
+              .map((childNode) => transform(childNode, childContext))
               .reduce((acc, next) => acc.concat(next.nodes), []);
 
             if (newNodes.length) {
@@ -168,7 +164,7 @@ function localizeNode(rule, mode, localAliasMap) {
               hasLocals: false,
               explicit: context.explicit,
             };
-            newNodes = node.map(childNode =>
+            newNodes = node.map((childNode) =>
               transform(childNode, childContext)
             );
 
@@ -185,9 +181,7 @@ function localizeNode(rule, mode, localAliasMap) {
         } else if (isScoped) {
           if (context.inside) {
             throw new Error(
-              `A ${node.value} is not allowed inside of a ${
-                context.inside
-              }(...)`
+              `A ${node.value} is not allowed inside of a ${context.inside}(...)`
             );
           }
 
@@ -201,22 +195,22 @@ function localizeNode(rule, mode, localAliasMap) {
             ? false
             : node.value;
 
-          context.global = node.value === ':global';
+          context.global = node.value === ":global";
           context.explicit = true;
 
           // because this node has spacing that is lost when we remove it
           // we make up for it by adding an extra combinator in since adding
           // spacing on the parent selector doesn't work
           return addBackSpacing
-            ? selectorParser.combinator({ value: ' ' })
+            ? selectorParser.combinator({ value: " " })
             : null;
         }
         break;
       }
-      case 'id':
-      case 'class': {
+      case "id":
+      case "class": {
         if (!node.value) {
-          throw new Error('Invalid class or id selector syntax');
+          throw new Error("Invalid class or id selector syntax");
         }
 
         if (context.global) {
@@ -228,10 +222,10 @@ function localizeNode(rule, mode, localAliasMap) {
 
         if (!isImportedValue || isImportedWithExplicitScope) {
           const innerNode = node.clone();
-          innerNode.spaces = { before: '', after: '' };
+          innerNode.spaces = { before: "", after: "" };
 
           node = selectorParser.pseudo({
-            value: ':local',
+            value: ":local",
             nodes: [innerNode],
             spaces: node.spaces,
           });
@@ -251,11 +245,11 @@ function localizeNode(rule, mode, localAliasMap) {
   };
 
   const rootContext = {
-    global: mode === 'global',
+    global: mode === "global",
     hasPureGlobals: false,
   };
 
-  rootContext.selector = selectorParser(root => {
+  rootContext.selector = selectorParser((root) => {
     transform(root, rootContext);
   }).processSync(rule, { updateSelector: false, lossless: true });
 
@@ -264,23 +258,23 @@ function localizeNode(rule, mode, localAliasMap) {
 
 function localizeDeclNode(node, context) {
   switch (node.type) {
-    case 'word':
+    case "word":
       if (context.localizeNextItem) {
         if (!context.localAliasMap.has(node.value)) {
-          node.value = ':local(' + node.value + ')';
+          node.value = ":local(" + node.value + ")";
           context.localizeNextItem = false;
         }
       }
       break;
 
-    case 'function':
+    case "function":
       if (
         context.options &&
         context.options.rewriteUrl &&
-        node.value.toLowerCase() === 'url'
+        node.value.toLowerCase() === "url"
       ) {
-        node.nodes.map(nestedNode => {
-          if (nestedNode.type !== 'string' && nestedNode.type !== 'word') {
+        node.nodes.map((nestedNode) => {
+          if (nestedNode.type !== "string" && nestedNode.type !== "word") {
             return;
           }
 
@@ -290,18 +284,18 @@ function localizeDeclNode(node, context) {
           );
 
           switch (nestedNode.type) {
-            case 'string':
+            case "string":
               if (nestedNode.quote === "'") {
-                newUrl = newUrl.replace(/(\\)/g, '\\$1').replace(/'/g, "\\'");
+                newUrl = newUrl.replace(/(\\)/g, "\\$1").replace(/'/g, "\\'");
               }
 
               if (nestedNode.quote === '"') {
-                newUrl = newUrl.replace(/(\\)/g, '\\$1').replace(/"/g, '\\"');
+                newUrl = newUrl.replace(/(\\)/g, "\\$1").replace(/"/g, '\\"');
               }
 
               break;
-            case 'word':
-              newUrl = newUrl.replace(/("|'|\)|\\)/g, '\\$1');
+            case "word":
+              newUrl = newUrl.replace(/("|'|\)|\\)/g, "\\$1");
               break;
           }
 
@@ -316,7 +310,7 @@ function localizeDeclNode(node, context) {
 function isWordAFunctionArgument(wordNode, functionNode) {
   return functionNode
     ? functionNode.nodes.some(
-        functionNodeChild =>
+        (functionNodeChild) =>
           functionNodeChild.sourceIndex === wordNode.sourceIndex
       )
     : false;
@@ -338,13 +332,13 @@ function localizeAnimationShorthandDeclValues(decl, context) {
   */
   const animationKeywords = {
     $alternate: 1,
-    '$alternate-reverse': 1,
+    "$alternate-reverse": 1,
     $backwards: 1,
     $both: 1,
     $ease: 1,
-    '$ease-in': 1,
-    '$ease-in-out': 1,
-    '$ease-out': 1,
+    "$ease-in": 1,
+    "$ease-in-out": 1,
+    "$ease-out": 1,
     $forwards: 1,
     $infinite: 1,
     $linear: 1,
@@ -353,8 +347,8 @@ function localizeAnimationShorthandDeclValues(decl, context) {
     $paused: 1,
     $reverse: 1,
     $running: 1,
-    '$step-end': 1,
-    '$step-start': 1,
+    "$step-end": 1,
+    "$step-start": 1,
     $initial: Infinity,
     $inherit: Infinity,
     $unset: Infinity,
@@ -363,31 +357,31 @@ function localizeAnimationShorthandDeclValues(decl, context) {
   const didParseAnimationName = false;
   let parsedAnimationKeywords = {};
   let stepsFunctionNode = null;
-  const valueNodes = valueParser(decl.value).walk(node => {
+  const valueNodes = valueParser(decl.value).walk((node) => {
     /* If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh. */
-    if (node.type === 'div') {
+    if (node.type === "div") {
       parsedAnimationKeywords = {};
     }
-    if (node.type === 'function' && node.value.toLowerCase() === 'steps') {
+    if (node.type === "function" && node.value.toLowerCase() === "steps") {
       stepsFunctionNode = node;
     }
     const value =
-      node.type === 'word' && !isWordAFunctionArgument(node, stepsFunctionNode)
+      node.type === "word" && !isWordAFunctionArgument(node, stepsFunctionNode)
         ? node.value.toLowerCase()
         : null;
 
     let shouldParseAnimationName = false;
 
     if (!didParseAnimationName && value && validIdent.test(value)) {
-      if ('$' + value in animationKeywords) {
-        parsedAnimationKeywords['$' + value] =
-          '$' + value in parsedAnimationKeywords
-            ? parsedAnimationKeywords['$' + value] + 1
+      if ("$" + value in animationKeywords) {
+        parsedAnimationKeywords["$" + value] =
+          "$" + value in parsedAnimationKeywords
+            ? parsedAnimationKeywords["$" + value] + 1
             : 0;
 
         shouldParseAnimationName =
-          parsedAnimationKeywords['$' + value] >=
-          animationKeywords['$' + value];
+          parsedAnimationKeywords["$" + value] >=
+          animationKeywords["$" + value];
       } else {
         shouldParseAnimationName = true;
       }
@@ -439,18 +433,18 @@ function localizeDecl(decl, context) {
   }
 }
 
-module.exports = postcss.plugin('postcss-modules-local-by-default', function(
+module.exports = postcss.plugin("postcss-modules-local-by-default", function (
   options
 ) {
-  if (typeof options !== 'object') {
+  if (typeof options !== "object") {
     options = {}; // If options is undefined or not an object the plugin fails
   }
 
   if (options && options.mode) {
     if (
-      options.mode !== 'global' &&
-      options.mode !== 'local' &&
-      options.mode !== 'pure'
+      options.mode !== "global" &&
+      options.mode !== "local" &&
+      options.mode !== "pure"
     ) {
       throw new Error(
         'options.mode must be either "global", "local" or "pure" (default "local")'
@@ -458,14 +452,14 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
     }
   }
 
-  const pureMode = options && options.mode === 'pure';
-  const globalMode = options && options.mode === 'global';
+  const pureMode = options && options.mode === "pure";
+  const globalMode = options && options.mode === "global";
 
-  return function(css) {
+  return function (css) {
     const { icssImports } = extractICSS(css, false);
     const localAliasMap = getImportLocalAliases(icssImports);
 
-    css.walkAtRules(function(atrule) {
+    css.walkAtRules(function (atrule) {
       if (/keyframes$/i.test(atrule.name)) {
         const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(atrule.params);
         const localMatch = /^\s*:local\s*\((.+)\)\s*$/.exec(atrule.params);
@@ -473,7 +467,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
         if (globalMatch) {
           if (pureMode) {
             throw atrule.error(
-              '@keyframes :global(...) is not allowed in pure mode'
+              "@keyframes :global(...) is not allowed in pure mode"
             );
           }
           atrule.params = globalMatch[1];
@@ -483,9 +477,9 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
           globalKeyframes = false;
         } else if (!globalMode) {
           if (atrule.params && !localAliasMap.has(atrule.params))
-            atrule.params = ':local(' + atrule.params + ')';
+            atrule.params = ":local(" + atrule.params + ")";
         }
-        atrule.walkDecls(function(decl) {
+        atrule.walkDecls(function (decl) {
           localizeDecl(decl, {
             localAliasMap,
             options: options,
@@ -493,8 +487,8 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
           });
         });
       } else if (atrule.nodes) {
-        atrule.nodes.forEach(function(decl) {
-          if (decl.type === 'decl') {
+        atrule.nodes.forEach(function (decl) {
+          if (decl.type === "decl") {
             localizeDecl(decl, {
               localAliasMap,
               options: options,
@@ -505,10 +499,10 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
       }
     });
 
-    css.walkRules(function(rule) {
+    css.walkRules(function (rule) {
       if (
         rule.parent &&
-        rule.parent.type === 'atrule' &&
+        rule.parent.type === "atrule" &&
         /keyframes$/i.test(rule.parent.name)
       ) {
         // ignore keyframe rules
@@ -517,8 +511,8 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
 
       if (
         rule.nodes &&
-        rule.selector.slice(0, 2) === '--' &&
-        rule.selector.slice(-1) === ':'
+        rule.selector.slice(0, 2) === "--" &&
+        rule.selector.slice(-1) === ":"
       ) {
         // ignore custom property set
         return;
@@ -534,7 +528,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
           'Selector "' +
             rule.selector +
             '" is not pure ' +
-            '(pure selectors must contain at least one local class or id)'
+            "(pure selectors must contain at least one local class or id)"
         );
       }
 
@@ -542,7 +536,7 @@ module.exports = postcss.plugin('postcss-modules-local-by-default', function(
 
       // Less-syntax mixins parse as rules with no nodes
       if (rule.nodes) {
-        rule.nodes.forEach(decl => localizeDecl(decl, context));
+        rule.nodes.forEach((decl) => localizeDecl(decl, context));
       }
     });
   };
