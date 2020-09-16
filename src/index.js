@@ -1,6 +1,5 @@
 "use strict";
 
-const postcss = require("postcss");
 const selectorParser = require("postcss-selector-parser");
 const valueParser = require("postcss-value-parser");
 const { extractICSS } = require("icss-utils");
@@ -433,13 +432,7 @@ function localizeDecl(decl, context) {
   }
 }
 
-module.exports = postcss.plugin("postcss-modules-local-by-default", function (
-  options
-) {
-  if (typeof options !== "object") {
-    options = {}; // If options is undefined or not an object the plugin fails
-  }
-
+module.exports = (options = {}) => {
   if (options && options.mode) {
     if (
       options.mode !== "global" &&
@@ -455,89 +448,97 @@ module.exports = postcss.plugin("postcss-modules-local-by-default", function (
   const pureMode = options && options.mode === "pure";
   const globalMode = options && options.mode === "global";
 
-  return function (css) {
-    const { icssImports } = extractICSS(css, false);
-    const localAliasMap = getImportLocalAliases(icssImports);
+  return {
+    postcssPlugin: "postcss-modules-local-by-default",
+    RootExit(root) {
+      const { icssImports } = extractICSS(root, false);
+      const localAliasMap = getImportLocalAliases(icssImports);
 
-    css.walkAtRules(function (atrule) {
-      if (/keyframes$/i.test(atrule.name)) {
-        const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(atrule.params);
-        const localMatch = /^\s*:local\s*\((.+)\)\s*$/.exec(atrule.params);
-        let globalKeyframes = globalMode;
-        if (globalMatch) {
-          if (pureMode) {
-            throw atrule.error(
-              "@keyframes :global(...) is not allowed in pure mode"
-            );
+      root.walkAtRules(function (atrule) {
+        if (/keyframes$/i.test(atrule.name)) {
+          const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(atrule.params);
+          const localMatch = /^\s*:local\s*\((.+)\)\s*$/.exec(atrule.params);
+
+          let globalKeyframes = globalMode;
+
+          if (globalMatch) {
+            if (pureMode) {
+              throw atrule.error(
+                "@keyframes :global(...) is not allowed in pure mode"
+              );
+            }
+            atrule.params = globalMatch[1];
+            globalKeyframes = true;
+          } else if (localMatch) {
+            atrule.params = localMatch[0];
+            globalKeyframes = false;
+          } else if (!globalMode) {
+            if (atrule.params && !localAliasMap.has(atrule.params)) {
+              atrule.params = ":local(" + atrule.params + ")";
+            }
           }
-          atrule.params = globalMatch[1];
-          globalKeyframes = true;
-        } else if (localMatch) {
-          atrule.params = localMatch[0];
-          globalKeyframes = false;
-        } else if (!globalMode) {
-          if (atrule.params && !localAliasMap.has(atrule.params))
-            atrule.params = ":local(" + atrule.params + ")";
-        }
-        atrule.walkDecls(function (decl) {
-          localizeDecl(decl, {
-            localAliasMap,
-            options: options,
-            global: globalKeyframes,
-          });
-        });
-      } else if (atrule.nodes) {
-        atrule.nodes.forEach(function (decl) {
-          if (decl.type === "decl") {
+
+          atrule.walkDecls(function (decl) {
             localizeDecl(decl, {
               localAliasMap,
               options: options,
-              global: globalMode,
+              global: globalKeyframes,
             });
-          }
-        });
-      }
-    });
+          });
+        } else if (atrule.nodes) {
+          atrule.nodes.forEach(function (decl) {
+            if (decl.type === "decl") {
+              localizeDecl(decl, {
+                localAliasMap,
+                options: options,
+                global: globalMode,
+              });
+            }
+          });
+        }
+      });
 
-    css.walkRules(function (rule) {
-      if (
-        rule.parent &&
-        rule.parent.type === "atrule" &&
-        /keyframes$/i.test(rule.parent.name)
-      ) {
-        // ignore keyframe rules
-        return;
-      }
+      root.walkRules(function (rule) {
+        if (
+          rule.parent &&
+          rule.parent.type === "atrule" &&
+          /keyframes$/i.test(rule.parent.name)
+        ) {
+          // ignore keyframe rules
+          return;
+        }
 
-      if (
-        rule.nodes &&
-        rule.selector.slice(0, 2) === "--" &&
-        rule.selector.slice(-1) === ":"
-      ) {
-        // ignore custom property set
-        return;
-      }
+        if (
+          rule.nodes &&
+          rule.selector.slice(0, 2) === "--" &&
+          rule.selector.slice(-1) === ":"
+        ) {
+          // ignore custom property set
+          return;
+        }
 
-      const context = localizeNode(rule, options.mode, localAliasMap);
+        const context = localizeNode(rule, options.mode, localAliasMap);
 
-      context.options = options;
-      context.localAliasMap = localAliasMap;
+        context.options = options;
+        context.localAliasMap = localAliasMap;
 
-      if (pureMode && context.hasPureGlobals) {
-        throw rule.error(
-          'Selector "' +
-            rule.selector +
-            '" is not pure ' +
-            "(pure selectors must contain at least one local class or id)"
-        );
-      }
+        if (pureMode && context.hasPureGlobals) {
+          throw rule.error(
+            'Selector "' +
+              rule.selector +
+              '" is not pure ' +
+              "(pure selectors must contain at least one local class or id)"
+          );
+        }
 
-      rule.selector = context.selector;
+        rule.selector = context.selector;
 
-      // Less-syntax mixins parse as rules with no nodes
-      if (rule.nodes) {
-        rule.nodes.forEach((decl) => localizeDecl(decl, context));
-      }
-    });
+        // Less-syntax mixins parse as rules with no nodes
+        if (rule.nodes) {
+          rule.nodes.forEach((decl) => localizeDecl(decl, context));
+        }
+      });
+    },
   };
-});
+};
+module.exports.postcss = true;

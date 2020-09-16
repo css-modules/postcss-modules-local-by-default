@@ -696,7 +696,6 @@ index(name, function (t) {
 });
 
 index("should use the postcss plugin api", function (t) {
-  t.plan(2);
-  t.ok(plugin().postcssVersion, "should be able to access version");
+  t.plan(1);
   t.equal(plugin().postcssPlugin, name, "should be able to access name");
 });
