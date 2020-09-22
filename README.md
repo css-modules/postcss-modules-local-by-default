@@ -42,7 +42,7 @@ $ npm test
 ## Development
 
 ```bash
-$ npm run autotest
+$ yarn test:watch
 ```
 
 ## License
