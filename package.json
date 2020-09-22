@@ -25,12 +25,11 @@
     "prettier": "prettier -l --ignore-path .gitignore .",
     "eslint": "eslint --ignore-path .gitignore .",
     "lint": "yarn eslint && yarn prettier",
-    "pretest": "yarn lint",
-    "test": "jest",
     "test:only": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --collectCoverageFrom=\"src/**/*\"",
-    "test:ci": "yarn pretest && yarn cover",
+    "pretest": "yarn lint",
+    "test": "yarn test:coverage",
     "prepublishOnly": "yarn test"
   },
   "dependencies": {
@@ -40,7 +39,9 @@
   },
   "devDependencies": {
     "eslint": "^7.9.0",
+    "husky": "^4.3.0",
     "jest": "^26.4.2",
+    "lint-staged": "^10.4.0",
     "postcss": "^8.0.7",
     "prettier": "^2.1.2"
   },
