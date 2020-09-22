@@ -5,7 +5,7 @@ node_js:
   - "12"
   - "14"
 
-script: yarn ci
+script: yarn test
 
 after_success:
   - cat ./coverage/lcov.info | node_modules/.bin/coveralls --verbose

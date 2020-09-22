@@ -508,15 +508,6 @@ module.exports = (options = {}) => {
           return;
         }
 
-        if (
-          rule.nodes &&
-          rule.selector.slice(0, 2) === "--" &&
-          rule.selector.slice(-1) === ":"
-        ) {
-          // ignore custom property set
-          return;
-        }
-
         const context = localizeNode(rule, options.mode, localAliasMap);
 
         context.options = options;
