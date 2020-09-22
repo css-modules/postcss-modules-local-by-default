@@ -3,7 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [4.0.0-rc.0] - 2020-07-25
+## [4.0.0-rc.1] - 2020-09-22
+
+### BREAKING CHANGE
+
+- update `icss-utils` for PostCSS 8 compatibility
+
+## [4.0.0-rc.0] - 2020-09-18
 
 ### BREAKING CHANGE
 

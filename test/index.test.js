@@ -1,218 +1,217 @@
 "use strict";
 
-const index = require("tape");
 const postcss = require("postcss");
 const plugin = require("../src");
 const name = require("../package.json").name;
 
 const tests = [
   {
-    should: "scope selectors",
+    name: "scope selectors",
     input: ".foobar {}",
     expected: ":local(.foobar) {}",
   },
   {
-    should: "scope escaped selectors",
+    name: "scope escaped selectors",
     input: ".\\3A \\) {}",
     expected: ":local(.\\3A \\)) {}",
   },
   {
-    should: "scope ids",
+    name: "scope ids",
     input: "#foobar {}",
     expected: ":local(#foobar) {}",
   },
   {
-    should: "scope escaped ids",
+    name: "scope escaped ids",
     input: "#\\#test {}",
     expected: ":local(#\\#test) {}",
   },
   {
-    should: "scope escaped ids (2)",
+    name: "scope escaped ids (2)",
     input: "#u-m\\00002b {}",
     expected: ":local(#u-m\\00002b) {}",
   },
   {
-    should: "scope multiple selectors",
+    name: "scope multiple selectors",
     input: ".foo, .baz {}",
     expected: ":local(.foo), :local(.baz) {}",
   },
   {
-    should: "scope sibling selectors",
+    name: "scope sibling selectors",
     input: ".foo ~ .baz {}",
     expected: ":local(.foo) ~ :local(.baz) {}",
   },
   {
-    should: "scope psuedo elements",
+    name: "scope psuedo elements",
     input: ".foo:after {}",
     expected: ":local(.foo):after {}",
   },
   {
-    should: "scope media queries",
+    name: "scope media queries",
     input: "@media only screen { .foo {} }",
     expected: "@media only screen { :local(.foo) {} }",
   },
   {
-    should: "allow narrow global selectors",
+    name: "allow narrow global selectors",
     input: ":global(.foo .bar) {}",
     expected: ".foo .bar {}",
   },
   {
-    should: "allow narrow local selectors",
+    name: "allow narrow local selectors",
     input: ":local(.foo .bar) {}",
     expected: ":local(.foo) :local(.bar) {}",
   },
   {
-    should: "allow broad global selectors",
+    name: "allow broad global selectors",
     input: ":global .foo .bar {}",
     expected: ".foo .bar {}",
   },
   {
-    should: "allow broad local selectors",
+    name: "allow broad local selectors",
     input: ":local .foo .bar {}",
     expected: ":local(.foo) :local(.bar) {}",
   },
   {
-    should: "allow multiple narrow global selectors",
+    name: "allow multiple narrow global selectors",
     input: ":global(.foo), :global(.bar) {}",
     expected: ".foo, .bar {}",
   },
   {
-    should: "allow multiple broad global selectors",
+    name: "allow multiple broad global selectors",
     input: ":global .foo, :global .bar {}",
     expected: ".foo, .bar {}",
   },
   {
-    should: "allow multiple broad local selectors",
+    name: "allow multiple broad local selectors",
     input: ":local .foo, :local .bar {}",
     expected: ":local(.foo), :local(.bar) {}",
   },
   {
-    should: "allow narrow global selectors nested inside local styles",
+    name: "allow narrow global selectors nested inside local styles",
     input: ".foo :global(.foo .bar) {}",
     expected: ":local(.foo) .foo .bar {}",
   },
   {
-    should: "allow broad global selectors nested inside local styles",
+    name: "allow broad global selectors nested inside local styles",
     input: ".foo :global .foo .bar {}",
     expected: ":local(.foo) .foo .bar {}",
   },
   {
-    should: "allow parentheses inside narrow global selectors",
+    name: "allow parentheses inside narrow global selectors",
     input: ".foo :global(.foo:not(.bar)) {}",
     expected: ":local(.foo) .foo:not(.bar) {}",
   },
   {
-    should: "allow parentheses inside narrow local selectors",
+    name: "allow parentheses inside narrow local selectors",
     input: ".foo :local(.foo:not(.bar)) {}",
     expected: ":local(.foo) :local(.foo):not(:local(.bar)) {}",
   },
   {
-    should: "allow narrow global selectors appended to local styles",
+    name: "allow narrow global selectors appended to local styles",
     input: ".foo:global(.foo.bar) {}",
     expected: ":local(.foo).foo.bar {}",
   },
   {
-    should: "ignore selectors that are already local",
+    name: "ignore selectors that are already local",
     input: ":local(.foobar) {}",
     expected: ":local(.foobar) {}",
   },
   {
-    should: "ignore nested selectors that are already local",
+    name: "ignore nested selectors that are already local",
     input: ":local(.foo) :local(.bar) {}",
     expected: ":local(.foo) :local(.bar) {}",
   },
   {
-    should: "ignore multiple selectors that are already local",
+    name: "ignore multiple selectors that are already local",
     input: ":local(.foo), :local(.bar) {}",
     expected: ":local(.foo), :local(.bar) {}",
   },
   {
-    should: "ignore sibling selectors that are already local",
+    name: "ignore sibling selectors that are already local",
     input: ":local(.foo) ~ :local(.bar) {}",
     expected: ":local(.foo) ~ :local(.bar) {}",
   },
   {
-    should: "ignore psuedo elements that are already local",
+    name: "ignore psuedo elements that are already local",
     input: ":local(.foo):after {}",
     expected: ":local(.foo):after {}",
   },
   {
-    should: "trim whitespace after empty broad selector",
+    name: "trim whitespace after empty broad selector",
     input: ".bar :global :global {}",
     expected: ":local(.bar) {}",
   },
   {
-    should: "broad global should be limited to selector",
+    name: "broad global should be limited to selector",
     input: ":global .foo, .bar :global, .foobar :global {}",
     expected: ".foo, :local(.bar), :local(.foobar) {}",
   },
   {
-    should: "broad global should be limited to nested selector",
+    name: "broad global should be limited to nested selector",
     input: ".foo:not(:global .bar).foobar {}",
     expected: ":local(.foo):not(.bar):local(.foobar) {}",
   },
   {
-    should: "broad global and local should allow switching",
+    name: "broad global and local should allow switching",
     input: ".foo :global .bar :local .foobar :local .barfoo {}",
     expected: ":local(.foo) .bar :local(.foobar) :local(.barfoo) {}",
   },
   {
-    should: "localize a single animation-name",
+    name: "localize a single animation-name",
     input: ".foo { animation-name: bar; }",
     expected: ":local(.foo) { animation-name: :local(bar); }",
   },
   {
-    should: "not localize a single animation-delay",
+    name: "not localize a single animation-delay",
     input: ".foo { animation-delay: 1s; }",
     expected: ":local(.foo) { animation-delay: 1s; }",
   },
   {
-    should: "localize multiple animation-names",
+    name: "localize multiple animation-names",
     input: ".foo { animation-name: bar, foobar; }",
     expected: ":local(.foo) { animation-name: :local(bar), :local(foobar); }",
   },
   {
-    should: "localize animation",
+    name: "localize animation",
     input: ".foo { animation: bar 5s, foobar; }",
     expected: ":local(.foo) { animation: :local(bar) 5s, :local(foobar); }",
   },
   {
-    should: "localize animation with vendor prefix",
+    name: "localize animation with vendor prefix",
     input: ".foo { -webkit-animation: bar; animation: bar; }",
     expected:
       ":local(.foo) { -webkit-animation: :local(bar); animation: :local(bar); }",
   },
   {
-    should: "not localize other rules",
+    name: "not localize other rules",
     input: '.foo { content: "animation: bar;" }',
     expected: ':local(.foo) { content: "animation: bar;" }',
   },
   {
-    should: "not localize global rules",
+    name: "not localize global rules",
     input: ":global .foo { animation: foo; animation-name: bar; }",
     expected: ".foo { animation: foo; animation-name: bar; }",
   },
   {
-    should: "handle a complex animation rule",
+    name: "handle a complex animation rule",
     input:
       ".foo { animation: foo, bar 5s linear 2s infinite alternate, barfoo 1s; }",
     expected:
       ":local(.foo) { animation: :local(foo), :local(bar) 5s linear 2s infinite alternate, :local(barfoo) 1s; }",
   },
   {
-    should: "handle animations where the first value is not the animation name",
+    name: "handle animations where the first value is not the animation name",
     input: ".foo { animation: 1s foo; }",
     expected: ":local(.foo) { animation: 1s :local(foo); }",
   },
   {
-    should:
+    name:
       "handle animations where the first value is not the animation name whilst also using keywords",
     input: ".foo { animation: 1s normal ease-out infinite foo; }",
     expected:
       ":local(.foo) { animation: 1s normal ease-out infinite :local(foo); }",
   },
   {
-    should:
+    name:
       "not treat animation curve as identifier of animation name even if it separated by comma",
     input:
       ".foo { animation: slide-right 300ms forwards ease-out, fade-in 300ms forwards ease-out; }",
@@ -220,7 +219,7 @@ const tests = [
       ":local(.foo) { animation: :local(slide-right) 300ms forwards ease-out, :local(fade-in) 300ms forwards ease-out; }",
   },
   {
-    should:
+    name:
       'not treat "start" and "end" keywords in steps() function as identifiers',
     input: [
       ".foo { animation: spin 1s steps(12, end) infinite; }",
@@ -236,42 +235,42 @@ const tests = [
     ].join("\n"),
   },
   {
-    should: "handle animations with custom timing functions",
+    name: "handle animations with custom timing functions",
     input:
       ".foo { animation: 1s normal cubic-bezier(0.25, 0.5, 0.5. 0.75) foo; }",
     expected:
       ":local(.foo) { animation: 1s normal cubic-bezier(0.25, 0.5, 0.5. 0.75) :local(foo); }",
   },
   {
-    should: "handle animations whose names are keywords",
+    name: "handle animations whose names are keywords",
     input: ".foo { animation: 1s infinite infinite; }",
     expected: ":local(.foo) { animation: 1s infinite :local(infinite); }",
   },
   {
-    should: 'handle not localize an animation shorthand value of "inherit"',
+    name: 'handle not localize an animation shorthand value of "inherit"',
     input: ".foo { animation: inherit; }",
     expected: ":local(.foo) { animation: inherit; }",
   },
   {
-    should: 'handle "constructor" as animation name',
+    name: 'handle "constructor" as animation name',
     input: ".foo { animation: constructor constructor; }",
     expected:
       ":local(.foo) { animation: :local(constructor) :local(constructor); }",
   },
   {
-    should: "default to global when mode provided",
+    name: "default to global when mode provided",
     input: ".foo {}",
     options: { mode: "global" },
     expected: ".foo {}",
   },
   {
-    should: "default to local when mode provided",
+    name: "default to local when mode provided",
     input: ".foo {}",
     options: { mode: "local" },
     expected: ":local(.foo) {}",
   },
   {
-    should: "use correct spacing",
+    name: "use correct spacing",
     input: [
       ".a :local .b {}",
       ".a:local.b {}",
@@ -299,150 +298,150 @@ const tests = [
     ].join("\n"),
   },
   {
-    should: "localize keyframes",
+    name: "localize keyframes",
     input: "@keyframes foo { from { color: red; } to { color: blue; } }",
     expected:
       "@keyframes :local(foo) { from { color: red; } to { color: blue; } }",
   },
   {
-    should: "localize keyframes in global default mode",
+    name: "localize keyframes in global default mode",
     input: "@keyframes foo {}",
     options: { mode: "global" },
     expected: "@keyframes foo {}",
   },
   {
-    should: "localize explicit keyframes",
+    name: "localize explicit keyframes",
     input:
       "@keyframes :local(foo) { 0% { color: red; } 33.3% { color: yellow; } 100% { color: blue; } } @-webkit-keyframes :global(bar) { from { color: red; } to { color: blue; } }",
     expected:
       "@keyframes :local(foo) { 0% { color: red; } 33.3% { color: yellow; } 100% { color: blue; } } @-webkit-keyframes bar { from { color: red; } to { color: blue; } }",
   },
   {
-    should: "ignore :export statements",
+    name: "ignore :export statements",
     input: ":export { foo: __foo; }",
     expected: ":export { foo: __foo; }",
   },
   {
-    should: "ignore :import statemtents",
+    name: "ignore :import statemtents",
     input: ':import("~/lol.css") { foo: __foo; }',
     expected: ':import("~/lol.css") { foo: __foo; }',
   },
   {
-    should: "incorrectly handle nested selectors",
+    name: "incorrectly handle nested selectors",
     input: ".bar:not(:global .foo, .baz) {}",
     expected: ":local(.bar):not(.foo, .baz) {}",
   },
   {
-    should: "compile in pure mode",
+    name: "compile in pure mode",
     input: ':global(.foo).bar, [type="radio"] ~ .label, :not(.foo), #bar {}',
     options: { mode: "pure" },
     expected:
       '.foo:local(.bar), [type="radio"] ~ :local(.label), :not(:local(.foo)), :local(#bar) {}',
   },
   {
-    should: "compile explict global element",
+    name: "compile explict global element",
     input: ":global(input) {}",
     expected: "input {}",
   },
   {
-    should: "compile explict global attribute",
+    name: "compile explict global attribute",
     input: ':global([type="radio"]), :not(:global [type="radio"]) {}',
     expected: '[type="radio"], :not([type="radio"]) {}',
   },
   {
-    should: "throw on invalid mode",
+    name: "throw on invalid mode",
     input: "",
     options: { mode: "???" },
     error: /"global", "local" or "pure"/,
   },
   {
-    should: "throw on inconsistent selector result",
+    name: "throw on inconsistent selector result",
     input: ":global .foo, .bar {}",
     error: /Inconsistent/,
   },
   {
-    should: "throw on nested :locals",
+    name: "throw on nested :locals",
     input: ":local(:local(.foo)) {}",
     error: /is not allowed inside/,
   },
   {
-    should: "throw on nested :globals",
+    name: "throw on nested :globals",
     input: ":global(:global(.foo)) {}",
     error: /is not allowed inside/,
   },
   {
-    should: "throw on nested mixed",
+    name: "throw on nested mixed",
     input: ":local(:global(.foo)) {}",
     error: /is not allowed inside/,
   },
   {
-    should: "throw on nested broad :local",
+    name: "throw on nested broad :local",
     input: ":global(:local .foo) {}",
     error: /is not allowed inside/,
   },
   {
-    should: "throw on incorrect spacing with broad :global",
+    name: "throw on incorrect spacing with broad :global",
     input: ".foo :global.bar {}",
     error: /Missing whitespace after :global/,
   },
   {
-    should: "throw on incorrect spacing with broad :local",
+    name: "throw on incorrect spacing with broad :local",
     input: ".foo:local .bar {}",
     error: /Missing whitespace before :local/,
   },
   {
-    should: "throw on not pure selector (global class)",
+    name: "throw on not pure selector (global class)",
     input: ":global(.foo) {}",
     options: { mode: "pure" },
     error: /":global\(\.foo\)" is not pure/,
   },
   {
-    should: "throw on not pure selector (with multiple 1)",
+    name: "throw on not pure selector (with multiple 1)",
     input: ".foo, :global(.bar) {}",
     options: { mode: "pure" },
     error: /".foo, :global\(\.bar\)" is not pure/,
   },
   {
-    should: "throw on not pure selector (with multiple 2)",
+    name: "throw on not pure selector (with multiple 2)",
     input: ":global(.bar), .foo {}",
     options: { mode: "pure" },
     error: /":global\(\.bar\), .foo" is not pure/,
   },
   {
-    should: "throw on not pure selector (element)",
+    name: "throw on not pure selector (element)",
     input: "input {}",
     options: { mode: "pure" },
     error: /"input" is not pure/,
   },
   {
-    should: "throw on not pure selector (attribute)",
+    name: "throw on not pure selector (attribute)",
     input: '[type="radio"] {}',
     options: { mode: "pure" },
     error: /"\[type="radio"\]" is not pure/,
   },
   {
-    should: "throw on not pure keyframes",
+    name: "throw on not pure keyframes",
     input: "@keyframes :global(foo) {}",
     options: { mode: "pure" },
     error: /@keyframes :global\(\.\.\.\) is not allowed in pure mode/,
   },
   {
-    should: "pass through global element",
+    name: "pass through global element",
     input: "input {}",
     expected: "input {}",
   },
   {
-    should: "localise class and pass through element",
+    name: "localise class and pass through element",
     input: ".foo input {}",
     expected: ":local(.foo) input {}",
   },
   {
-    should: "pass through attribute selector",
+    name: "pass through attribute selector",
     input: '[type="radio"] {}',
     expected: '[type="radio"] {}',
   },
   {
-    should: "not modify urls without option",
+    name: "not modify urls without option",
     input:
       ".a { background: url(./image.png); }\n" +
       ":global .b { background: url(image.png); }\n" +
@@ -453,7 +452,7 @@ const tests = [
       ':local(.c) { background: url("./image.png"); }',
   },
   {
-    should: "rewrite url in local block",
+    name: "rewrite url in local block",
     input:
       ".a { background: url(./image.png); }\n" +
       ":global .b { background: url(image.png); }\n" +
@@ -486,12 +485,12 @@ const tests = [
       "foo { background: end-with-url(something); }",
   },
   {
-    should: "not crash on atrule without nodes",
+    name: "not crash on atrule without nodes",
     input: '@charset "utf-8";',
     expected: '@charset "utf-8";',
   },
   {
-    should: "not crash on a rule without nodes",
+    name: "not crash on a rule without nodes",
     input: (function () {
       const inner = postcss.rule({ selector: ".b", ruleWithoutBody: true });
       const outer = postcss.rule({ selector: ".a" }).push(inner);
@@ -503,32 +502,32 @@ const tests = [
     expected: ":local(.a) {\n    :local(.b) {}\n}",
   },
   {
-    should: "not break unicode characters",
+    name: "not break unicode characters",
     input: '.a { content: "\\2193" }',
     expected: ':local(.a) { content: "\\2193" }',
   },
   {
-    should: "not break unicode characters",
+    name: "not break unicode characters",
     input: '.a { content: "\\2193\\2193" }',
     expected: ':local(.a) { content: "\\2193\\2193" }',
   },
   {
-    should: "not break unicode characters",
+    name: "not break unicode characters",
     input: '.a { content: "\\2193 \\2193" }',
     expected: ':local(.a) { content: "\\2193 \\2193" }',
   },
   {
-    should: "not break unicode characters",
+    name: "not break unicode characters",
     input: '.a { content: "\\2193\\2193\\2193" }',
     expected: ':local(.a) { content: "\\2193\\2193\\2193" }',
   },
   {
-    should: "not break unicode characters",
+    name: "not break unicode characters",
     input: '.a { content: "\\2193 \\2193 \\2193" }',
     expected: ':local(.a) { content: "\\2193 \\2193 \\2193" }',
   },
   {
-    should: "not ignore custom property set",
+    name: "not ignore custom property set",
     input:
       ":root { --title-align: center; --sr-only: { position: absolute; } }",
     expected:
@@ -538,7 +537,7 @@ const tests = [
    * Imported aliases
    */
   {
-    should: "not localize imported alias",
+    name: "not localize imported alias",
     input: `
       :import(foo) { a_value: some-value; }
 
@@ -551,7 +550,7 @@ const tests = [
     `,
   },
   {
-    should: "not localize nested imported alias",
+    name: "not localize nested imported alias",
     input: `
       :import(foo) { a_value: some-value; }
 
@@ -565,7 +564,7 @@ const tests = [
   },
 
   {
-    should: "ignore imported in explicit local",
+    name: "ignore imported in explicit local",
     input: `
       :import(foo) { a_value: some-value; }
 
@@ -578,7 +577,7 @@ const tests = [
     `,
   },
   {
-    should: "escape local context with explict global",
+    name: "escape local context with explict global",
     input: `
       :import(foo) { a_value: some-value; }
 
@@ -591,7 +590,7 @@ const tests = [
     `,
   },
   {
-    should: "respect explicit local",
+    name: "respect explicit local",
     input: `
       :import(foo) { a_value: some-value; }
 
@@ -604,7 +603,7 @@ const tests = [
     `,
   },
   {
-    should: "not localize imported animation-name",
+    name: "not localize imported animation-name",
     input: `
       :import(file) { a_value: some-value; }
 
@@ -617,51 +616,51 @@ const tests = [
     `,
   },
   {
-    should: "throw on invalid syntax id usage",
+    name: "throw on invalid syntax id usage",
     input: ". {}",
     error: /Invalid class or id selector syntax/,
   },
   {
-    should: "throw on invalid syntax class usage",
+    name: "throw on invalid syntax class usage",
     input: "# {}",
     error: /Invalid class or id selector syntax/,
   },
   {
-    should: "throw on invalid syntax local class usage",
+    name: "throw on invalid syntax local class usage",
     input: ":local(.) {}",
     error: /Invalid class or id selector syntax/,
   },
   {
-    should: "throw on invalid syntax local id usage",
+    name: "throw on invalid syntax local id usage",
     input: ":local(#) {}",
     error: /Invalid class or id selector syntax/,
   },
   {
-    should: "throw on invalid global class usage",
+    name: "throw on invalid global class usage",
     input: ":global(.) {}",
     error: /Invalid class or id selector syntax/,
   },
   {
-    should: "throw on invalid global class usage",
+    name: "throw on invalid global class usage",
     input: ":global(#) {}",
     error: /Invalid class or id selector syntax/,
   },
   /*
   Bug in postcss-selector-parser
   {
-    should: 'throw on invalid global class usage',
+    name: 'throw on invalid global class usage',
     input: ':global() {}',
     error: /:global\(\) can't be empty/
   },
   */
   {
-    should: "consider :import statements pure",
+    name: "consider :import statements pure",
     input: ':import("~/lol.css") { foo: __foo; }',
     options: { mode: "pure" },
     expected: ':import("~/lol.css") { foo: __foo; }',
   },
   {
-    should: "consider :export statements pure",
+    name: "consider :export statements pure",
     input: ":export { foo: __foo; }",
     options: { mode: "pure" },
     expected: ":export { foo: __foo; }",
@@ -672,30 +671,24 @@ function process(css, options) {
   return postcss(plugin(options)).process(css).css;
 }
 
-index(name, function (t) {
-  t.plan(tests.length);
+describe(name, function () {
+  it("should use the postcss plugin api", function () {
+    expect(plugin().postcssPlugin).toBe(name);
+  });
 
   tests.forEach(function (testCase) {
-    const options = testCase.options;
-    if (testCase.error) {
-      t.throws(
-        function () {
-          process(testCase.input, options);
-        },
-        testCase.error,
-        "should " + testCase.should
-      );
-    } else {
-      t.equal(
-        process(testCase.input, options),
-        testCase.expected,
-        "should " + testCase.should
-      );
-    }
-  });
-});
+    it(testCase.name, () => {
+      const { options, error, input } = testCase;
 
-index("should use the postcss plugin api", function (t) {
-  t.plan(1);
-  t.equal(plugin().postcssPlugin, name, "should be able to access name");
+      if (error) {
+        expect(() => {
+          process(input, options);
+        }).toThrow(testCase.error);
+      } else {
+        const { expected } = testCase;
+
+        expect(expected).toBe(process(input, options));
+      }
+    });
+  });
 });
