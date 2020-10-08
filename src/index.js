@@ -450,7 +450,7 @@ module.exports = (options = {}) => {
 
   return {
     postcssPlugin: "postcss-modules-local-by-default",
-    RootExit(root) {
+    OnceExit(root) {
       const { icssImports } = extractICSS(root, false);
       const localAliasMap = getImportLocalAliases(icssImports);
 
