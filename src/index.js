@@ -26,20 +26,17 @@ function normalizeNodeArray(nodes) {
 }
 
 function localizeNode(rule, mode, localAliasMap) {
-  const isScopePseudo = (node) =>
-    node.value === ":local" || node.value === ":global";
-  const isImportExportPseudo = (node) =>
-    node.value === ":import" || node.value === ":export";
-
   const transform = (node, context) => {
     if (context.ignoreNextSpacing && !isSpacing(node)) {
       throw new Error("Missing whitespace after " + context.ignoreNextSpacing);
     }
+
     if (context.enforceNoSpacing && isSpacing(node)) {
       throw new Error("Missing whitespace before " + context.enforceNoSpacing);
     }
 
     let newNodes;
+
     switch (node.type) {
       case "root": {
         let resultingGlobal;
@@ -101,8 +98,9 @@ function localizeNode(rule, mode, localAliasMap) {
       case "pseudo": {
         let childContext;
         const isNested = !!node.length;
-        const isScoped = isScopePseudo(node);
-        const isImportExport = isImportExportPseudo(node);
+        const isScoped = node.value === ":local" || node.value === ":global";
+        const isImportExport =
+          node.value === ":import" || node.value === ":export";
 
         if (isImportExport) {
           context.hasLocals = true;
@@ -303,91 +301,9 @@ function isWordAFunctionArgument(wordNode, functionNode) {
     : false;
 }
 
-function localizeAnimationShorthandDeclValues(decl, context) {
-  const validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
-
-  /*
-  The spec defines some keywords that you can use to describe properties such as the timing
-  function. These are still valid animation names, so as long as there is a property that accepts
-  a keyword, it is given priority. Only when all the properties that can take a keyword are
-  exhausted can the animation name be set to the keyword. I.e.
-
-  animation: infinite infinite;
-
-  The animation will repeat an infinite number of times from the first argument, and will have an
-  animation name of infinite from the second.
-  */
-  const animationKeywords = {
-    $alternate: 1,
-    "$alternate-reverse": 1,
-    $backwards: 1,
-    $both: 1,
-    $ease: 1,
-    "$ease-in": 1,
-    "$ease-in-out": 1,
-    "$ease-out": 1,
-    $forwards: 1,
-    $infinite: 1,
-    $linear: 1,
-    $none: Infinity, // No matter how many times you write none, it will never be an animation name
-    $normal: 1,
-    $paused: 1,
-    $reverse: 1,
-    $running: 1,
-    "$step-end": 1,
-    "$step-start": 1,
-    $initial: Infinity,
-    $inherit: Infinity,
-    $unset: Infinity,
-  };
-
-  const didParseAnimationName = false;
-  let parsedAnimationKeywords = {};
-  let stepsFunctionNode = null;
-  const valueNodes = valueParser(decl.value).walk((node) => {
-    /* If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh. */
-    if (node.type === "div") {
-      parsedAnimationKeywords = {};
-    }
-    if (node.type === "function" && node.value.toLowerCase() === "steps") {
-      stepsFunctionNode = node;
-    }
-    const value =
-      node.type === "word" && !isWordAFunctionArgument(node, stepsFunctionNode)
-        ? node.value.toLowerCase()
-        : null;
-
-    let shouldParseAnimationName = false;
-
-    if (!didParseAnimationName && value && validIdent.test(value)) {
-      if ("$" + value in animationKeywords) {
-        parsedAnimationKeywords["$" + value] =
-          "$" + value in parsedAnimationKeywords
-            ? parsedAnimationKeywords["$" + value] + 1
-            : 0;
-
-        shouldParseAnimationName =
-          parsedAnimationKeywords["$" + value] >=
-          animationKeywords["$" + value];
-      } else {
-        shouldParseAnimationName = true;
-      }
-    }
-
-    const subContext = {
-      options: context.options,
-      global: context.global,
-      localizeNextItem: shouldParseAnimationName && !context.global,
-      localAliasMap: context.localAliasMap,
-    };
-    return localizeDeclNode(node, subContext);
-  });
-
-  decl.value = valueNodes.toString();
-}
-
 function localizeDeclValues(localize, decl, context) {
   const valueNodes = valueParser(decl.value);
+
   valueNodes.walk((node, index, nodes) => {
     const subContext = {
       options: context.options,
@@ -404,7 +320,89 @@ function localizeDecl(decl, context) {
   const isAnimation = /animation$/i.test(decl.prop);
 
   if (isAnimation) {
-    return localizeAnimationShorthandDeclValues(decl, context);
+    const validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
+
+    /*
+    The spec defines some keywords that you can use to describe properties such as the timing
+    function. These are still valid animation names, so as long as there is a property that accepts
+    a keyword, it is given priority. Only when all the properties that can take a keyword are
+    exhausted can the animation name be set to the keyword. I.e.
+  
+    animation: infinite infinite;
+  
+    The animation will repeat an infinite number of times from the first argument, and will have an
+    animation name of infinite from the second.
+    */
+    const animationKeywords = {
+      $alternate: 1,
+      "$alternate-reverse": 1,
+      $backwards: 1,
+      $both: 1,
+      $ease: 1,
+      "$ease-in": 1,
+      "$ease-in-out": 1,
+      "$ease-out": 1,
+      $forwards: 1,
+      $infinite: 1,
+      $linear: 1,
+      $none: Infinity, // No matter how many times you write none, it will never be an animation name
+      $normal: 1,
+      $paused: 1,
+      $reverse: 1,
+      $running: 1,
+      "$step-end": 1,
+      "$step-start": 1,
+      $initial: Infinity,
+      $inherit: Infinity,
+      $unset: Infinity,
+    };
+
+    const didParseAnimationName = false;
+    let parsedAnimationKeywords = {};
+    let stepsFunctionNode = null;
+    const valueNodes = valueParser(decl.value).walk((node) => {
+      /* If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh. */
+      if (node.type === "div") {
+        parsedAnimationKeywords = {};
+      }
+      if (node.type === "function" && node.value.toLowerCase() === "steps") {
+        stepsFunctionNode = node;
+      }
+      const value =
+        node.type === "word" &&
+        !isWordAFunctionArgument(node, stepsFunctionNode)
+          ? node.value.toLowerCase()
+          : null;
+
+      let shouldParseAnimationName = false;
+
+      if (!didParseAnimationName && value && validIdent.test(value)) {
+        if ("$" + value in animationKeywords) {
+          parsedAnimationKeywords["$" + value] =
+            "$" + value in parsedAnimationKeywords
+              ? parsedAnimationKeywords["$" + value] + 1
+              : 0;
+
+          shouldParseAnimationName =
+            parsedAnimationKeywords["$" + value] >=
+            animationKeywords["$" + value];
+        } else {
+          shouldParseAnimationName = true;
+        }
+      }
+
+      const subContext = {
+        options: context.options,
+        global: context.global,
+        localizeNextItem: shouldParseAnimationName && !context.global,
+        localAliasMap: context.localAliasMap,
+      };
+      return localizeDeclNode(node, subContext);
+    });
+
+    decl.value = valueNodes.toString();
+
+    return;
   }
 
   const isAnimationName = /animation(-name)?$/i.test(decl.prop);
@@ -444,7 +442,7 @@ module.exports = (options = {}) => {
       const localAliasMap = new Map();
 
       return {
-        Once(root) {
+        Root(root) {
           const { icssImports } = extractICSS(root, false);
 
           Object.keys(icssImports).forEach((key) => {
