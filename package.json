@@ -1,6 +1,6 @@
 {
   "name": "postcss-modules-local-by-default",
-  "version": "4.0.0-rc.3",
+  "version": "4.0.0-rc.4",
   "description": "A CSS Modules transform to make local scope the default",
   "main": "src/index.js",
   "author": "Mark Dalgleish",
@@ -40,6 +40,7 @@
   "devDependencies": {
     "coveralls": "^3.1.0",
     "eslint": "^7.10.0",
+    "eslint-config-prettier": "^6.12.0",
     "husky": "^4.3.0",
     "jest": "^26.5.2",
     "lint-staged": "^10.4.0",

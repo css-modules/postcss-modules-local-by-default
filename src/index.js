@@ -9,9 +9,9 @@ const isSpacing = (node) => node.type === "combinator" && node.value === " ";
 function normalizeNodeArray(nodes) {
   const array = [];
 
-  nodes.forEach(function (x) {
+  nodes.forEach((x) => {
     if (Array.isArray(x)) {
-      normalizeNodeArray(x).forEach(function (item) {
+      normalizeNodeArray(x).forEach((item) => {
         array.push(item);
       });
     } else if (x) {
@@ -43,7 +43,7 @@ function localizeNode(rule, mode, localAliasMap) {
 
         context.hasPureGlobals = false;
 
-        newNodes = node.nodes.map(function (n) {
+        newNodes = node.nodes.map((n) => {
           const nContext = {
             global: context.global,
             lastWasSpacing: true,
@@ -301,8 +301,8 @@ function isWordAFunctionArgument(wordNode, functionNode) {
     : false;
 }
 
-function localizeDeclValues(localize, decl, context) {
-  const valueNodes = valueParser(decl.value);
+function localizeDeclarationValues(localize, declaration, context) {
+  const valueNodes = valueParser(declaration.value);
 
   valueNodes.walk((node, index, nodes) => {
     const subContext = {
@@ -313,11 +313,12 @@ function localizeDeclValues(localize, decl, context) {
     };
     nodes[index] = localizeDeclNode(node, subContext);
   });
-  decl.value = valueNodes.toString();
+
+  declaration.value = valueNodes.toString();
 }
 
-function localizeDecl(decl, context) {
-  const isAnimation = /animation$/i.test(decl.prop);
+function localizeDeclaration(declaration, context) {
+  const isAnimation = /animation$/i.test(declaration.prop);
 
   if (isAnimation) {
     const validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
@@ -360,7 +361,7 @@ function localizeDecl(decl, context) {
     const didParseAnimationName = false;
     let parsedAnimationKeywords = {};
     let stepsFunctionNode = null;
-    const valueNodes = valueParser(decl.value).walk((node) => {
+    const valueNodes = valueParser(declaration.value).walk((node) => {
       /* If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh. */
       if (node.type === "div") {
         parsedAnimationKeywords = {};
@@ -400,25 +401,23 @@ function localizeDecl(decl, context) {
       return localizeDeclNode(node, subContext);
     });
 
-    decl.value = valueNodes.toString();
+    declaration.value = valueNodes.toString();
 
     return;
   }
 
-  const isAnimationName = /animation(-name)?$/i.test(decl.prop);
+  const isAnimationName = /animation(-name)?$/i.test(declaration.prop);
 
   if (isAnimationName) {
-    return localizeDeclValues(true, decl, context);
+    return localizeDeclarationValues(true, declaration, context);
   }
 
-  const hasUrl = /url\(/i.test(decl.value);
+  const hasUrl = /url\(/i.test(declaration.value);
 
   if (hasUrl) {
-    return localizeDeclValues(false, decl, context);
+    return localizeDeclarationValues(false, declaration, context);
   }
 }
-
-const isVisited = Symbol("isVisited");
 
 module.exports = (options = {}) => {
   if (options && options.mode) {
@@ -442,7 +441,7 @@ module.exports = (options = {}) => {
       const localAliasMap = new Map();
 
       return {
-        Root(root) {
+        OnceExit(root) {
           const { icssImports } = extractICSS(root, false);
 
           Object.keys(icssImports).forEach((key) => {
@@ -450,94 +449,88 @@ module.exports = (options = {}) => {
               localAliasMap.set(prop, icssImports[key][prop]);
             });
           });
-        },
-        AtRule(atRule) {
-          if (atRule[isVisited]) {
-            return;
-          }
 
-          if (/keyframes$/i.test(atRule.name)) {
-            const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(
-              atRule.params
-            );
-            const localMatch = /^\s*:local\s*\((.+)\)\s*$/.exec(atRule.params);
+          root.walkAtRules((atRule) => {
+            if (/keyframes$/i.test(atRule.name)) {
+              const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(
+                atRule.params
+              );
+              const localMatch = /^\s*:local\s*\((.+)\)\s*$/.exec(
+                atRule.params
+              );
 
-            let globalKeyframes = globalMode;
+              let globalKeyframes = globalMode;
 
-            if (globalMatch) {
-              if (pureMode) {
-                throw atRule.error(
-                  "@keyframes :global(...) is not allowed in pure mode"
-                );
+              if (globalMatch) {
+                if (pureMode) {
+                  throw atRule.error(
+                    "@keyframes :global(...) is not allowed in pure mode"
+                  );
+                }
+                atRule.params = globalMatch[1];
+                globalKeyframes = true;
+              } else if (localMatch) {
+                atRule.params = localMatch[0];
+                globalKeyframes = false;
+              } else if (!globalMode) {
+                if (atRule.params && !localAliasMap.has(atRule.params)) {
+                  atRule.params = ":local(" + atRule.params + ")";
+                }
               }
-              atRule.params = globalMatch[1];
-              globalKeyframes = true;
-            } else if (localMatch) {
-              atRule.params = localMatch[0];
-              globalKeyframes = false;
-            } else if (!globalMode) {
-              if (atRule.params && !localAliasMap.has(atRule.params)) {
-                atRule.params = ":local(" + atRule.params + ")";
-              }
-            }
 
-            atRule.walkDecls(function (decl) {
-              localizeDecl(decl, {
-                localAliasMap,
-                options: options,
-                global: globalKeyframes,
-              });
-            });
-          } else if (atRule.nodes) {
-            atRule.nodes.forEach(function (decl) {
-              if (decl.type === "decl") {
-                localizeDecl(decl, {
+              atRule.walkDecls((declaration) => {
+                localizeDeclaration(declaration, {
                   localAliasMap,
                   options: options,
-                  global: globalMode,
+                  global: globalKeyframes,
                 });
-              }
-            });
-          }
+              });
+            } else if (atRule.nodes) {
+              atRule.nodes.forEach((declaration) => {
+                if (declaration.type === "decl") {
+                  localizeDeclaration(declaration, {
+                    localAliasMap,
+                    options: options,
+                    global: globalMode,
+                  });
+                }
+              });
+            }
+          });
 
-          atRule[isVisited] = true;
-        },
-        Rule(rule) {
-          if (rule[isVisited]) {
-            return;
-          }
+          root.walkRules((rule) => {
+            if (
+              rule.parent &&
+              rule.parent.type === "atrule" &&
+              /keyframes$/i.test(rule.parent.name)
+            ) {
+              // ignore keyframe rules
+              return;
+            }
 
-          if (
-            rule.parent &&
-            rule.parent.type === "atrule" &&
-            /keyframes$/i.test(rule.parent.name)
-          ) {
-            // ignore keyframe rules
-            return;
-          }
+            const context = localizeNode(rule, options.mode, localAliasMap);
 
-          const context = localizeNode(rule, options.mode, localAliasMap);
+            context.options = options;
+            context.localAliasMap = localAliasMap;
 
-          context.options = options;
-          context.localAliasMap = localAliasMap;
+            if (pureMode && context.hasPureGlobals) {
+              throw rule.error(
+                'Selector "' +
+                  rule.selector +
+                  '" is not pure ' +
+                  "(pure selectors must contain at least one local class or id)"
+              );
+            }
 
-          if (pureMode && context.hasPureGlobals) {
-            throw rule.error(
-              'Selector "' +
-                rule.selector +
-                '" is not pure ' +
-                "(pure selectors must contain at least one local class or id)"
-            );
-          }
+            rule.selector = context.selector;
 
-          rule.selector = context.selector;
-
-          // Less-syntax mixins parse as rules with no nodes
-          if (rule.nodes) {
-            rule.nodes.forEach((decl) => localizeDecl(decl, context));
-          }
-
-          rule[isVisited] = true;
+            // Less-syntax mixins parse as rules with no nodes
+            if (rule.nodes) {
+              rule.nodes.forEach((declaration) =>
+                localizeDeclaration(declaration, context)
+              );
+            }
+          });
         },
       };
     },
