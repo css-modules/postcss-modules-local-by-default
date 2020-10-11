@@ -420,20 +420,18 @@ function localizeDeclaration(declaration, context) {
 }
 
 module.exports = (options = {}) => {
-  if (options && options.mode) {
-    if (
-      options.mode !== "global" &&
-      options.mode !== "local" &&
-      options.mode !== "pure"
-    ) {
-      throw new Error(
-        'options.mode must be either "global", "local" or "pure" (default "local")'
-      );
-    }
+  if (
+    options.mode !== "global" &&
+    options.mode !== "local" &&
+    options.mode !== "pure"
+  ) {
+    throw new Error(
+      'options.mode must be either "global", "local" or "pure" (default "local")'
+    );
   }
 
-  const pureMode = options && options.mode === "pure";
-  const globalMode = options && options.mode === "global";
+  const pureMode = options.mode === "pure";
+  const globalMode = options.mode === "global";
 
   return {
     postcssPlugin: "postcss-modules-local-by-default",
