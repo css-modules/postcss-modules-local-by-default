@@ -420,16 +420,16 @@ function localizeDeclaration(declaration, context) {
 }
 
 module.exports = (options = {}) => {
-  if (options && options.mode) {
-    if (
-      options.mode !== "global" &&
-      options.mode !== "local" &&
-      options.mode !== "pure"
-    ) {
-      throw new Error(
-        'options.mode must be either "global", "local" or "pure" (default "local")'
-      );
-    }
+  if (
+    options &&
+    options.mode &&
+    options.mode !== "global" &&
+    options.mode !== "local" &&
+    options.mode !== "pure"
+  ) {
+    throw new Error(
+      'options.mode must be either "global", "local" or "pure" (default "local")'
+    );
   }
 
   const pureMode = options && options.mode === "pure";
@@ -441,7 +441,7 @@ module.exports = (options = {}) => {
       const localAliasMap = new Map();
 
       return {
-        OnceExit(root) {
+        Once(root) {
           const { icssImports } = extractICSS(root, false);
 
           Object.keys(icssImports).forEach((key) => {

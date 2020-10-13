@@ -1,6 +1,6 @@
 {
   "name": "postcss-modules-local-by-default",
-  "version": "4.0.0-rc.4",
+  "version": "4.0.0",
   "description": "A CSS Modules transform to make local scope the default",
   "main": "src/index.js",
   "author": "Mark Dalgleish",
@@ -33,7 +33,7 @@
     "prepublishOnly": "yarn test"
   },
   "dependencies": {
-    "icss-utils": "^5.0.0-rc.0",
+    "icss-utils": "^5.0.0",
     "postcss-selector-parser": "^6.0.2",
     "postcss-value-parser": "^4.1.0"
   },
