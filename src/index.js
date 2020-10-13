@@ -421,6 +421,8 @@ function localizeDeclaration(declaration, context) {
 
 module.exports = (options = {}) => {
   if (
+    options &&
+    options.mode &&
     options.mode !== "global" &&
     options.mode !== "local" &&
     options.mode !== "pure"
@@ -430,8 +432,8 @@ module.exports = (options = {}) => {
     );
   }
 
-  const pureMode = options.mode === "pure";
-  const globalMode = options.mode === "global";
+  const pureMode = options && options.mode === "pure";
+  const globalMode = options && options.mode === "global";
 
   return {
     postcssPlugin: "postcss-modules-local-by-default",
@@ -439,7 +441,7 @@ module.exports = (options = {}) => {
       const localAliasMap = new Map();
 
       return {
-        OnceExit(root) {
+        Once(root) {
           const { icssImports } = extractICSS(root, false);
 
           Object.keys(icssImports).forEach((key) => {
