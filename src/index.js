@@ -321,7 +321,7 @@ function localizeDeclaration(declaration, context) {
   const isAnimation = /animation$/i.test(declaration.prop);
 
   if (isAnimation) {
-    const validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
+    const validIdent = /^-?(?:\\[~!@$%^&*()+=,./';:"?><[]\\{}|`#]|[_a-z])(?:\\[~!@$%^&*()+=,./';:"?><[]\\{}|`#]|[_a-z0-9-])*$/i;
 
     /*
     The spec defines some keywords that you can use to describe properties such as the timing

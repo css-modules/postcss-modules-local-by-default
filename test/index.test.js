@@ -304,6 +304,18 @@ const tests = [
       "@keyframes :local(foo) { from { color: red; } to { color: blue; } }",
   },
   {
+    name: "localize keyframes starting with special characters",
+    input: "@keyframes \\@foo { from { color: red; } to { color: blue; } }",
+    expected:
+      "@keyframes :local(\\@foo) { from { color: red; } to { color: blue; } }",
+  },
+  {
+    name: "localize keyframes containing special characters",
+    input: "@keyframes f\\@oo { from { color: red; } to { color: blue; } }",
+    expected:
+      "@keyframes :local(f\\@oo) { from { color: red; } to { color: blue; } }",
+  },
+  {
     name: "localize keyframes in global default mode",
     input: "@keyframes foo {}",
     options: { mode: "global" },
