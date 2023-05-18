@@ -301,10 +301,27 @@ function isWordAFunctionArgument(wordNode, functionNode) {
     : false;
 }
 
+// `none` is special value, other is global values
+const specialKeywords = [
+  "none",
+  "inherit",
+  "initial",
+  "revert",
+  "revert-layer",
+  "unset",
+];
+
 function localizeDeclarationValues(localize, declaration, context) {
   const valueNodes = valueParser(declaration.value);
 
   valueNodes.walk((node, index, nodes) => {
+    if (
+      node.type === "word" &&
+      specialKeywords.includes(node.value.toLowerCase())
+    ) {
+      return;
+    }
+
     const subContext = {
       options: context.options,
       global: context.global,
@@ -321,16 +338,26 @@ function localizeDeclaration(declaration, context) {
   const isAnimation = /animation$/i.test(declaration.prop);
 
   if (isAnimation) {
-    const validIdent = /^-?[_a-z][_a-z0-9-]*$/i;
+    // letter
+    // An uppercase letter or a lowercase letter.
+    //
+    // ident-start code point
+    // A letter, a non-ASCII code point, or U+005F LOW LINE (_).
+    //
+    // ident code point
+    // An ident-start code point, a digit, or U+002D HYPHEN-MINUS (-).
+
+    // We don't validate `hex digits`, because we don't need it, it is work of linters.
+    const validIdent = /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-)((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
 
     /*
     The spec defines some keywords that you can use to describe properties such as the timing
     function. These are still valid animation names, so as long as there is a property that accepts
     a keyword, it is given priority. Only when all the properties that can take a keyword are
     exhausted can the animation name be set to the keyword. I.e.
-  
+
     animation: infinite infinite;
-  
+
     The animation will repeat an infinite number of times from the first argument, and will have an
     animation name of infinite from the second.
     */
@@ -356,6 +383,8 @@ function localizeDeclaration(declaration, context) {
       $initial: Infinity,
       $inherit: Infinity,
       $unset: Infinity,
+      $revert: Infinity,
+      "$revert-layer": Infinity,
     };
 
     const didParseAnimationName = false;
