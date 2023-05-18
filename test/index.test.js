@@ -171,6 +171,91 @@ const tests = [
     expected: ":local(.foo) { animation-name: :local(bar), :local(foobar); }",
   },
   {
+    name: "not localize revert",
+    input: ".foo { animation: revert; }",
+    expected: ":local(.foo) { animation: revert; }",
+  },
+  {
+    name: "not localize revert #2",
+    input: ".foo { animation-name: revert; }",
+    expected: ":local(.foo) { animation-name: revert; }",
+  },
+  {
+    name: "not localize revert #3",
+    input: ".foo { animation-name: revert, foo, none; }",
+    expected: ":local(.foo) { animation-name: revert, :local(foo), none; }",
+  },
+  {
+    name: "not localize revert-layer",
+    input: ".foo { animation: revert-layer; }",
+    expected: ":local(.foo) { animation: revert-layer; }",
+  },
+  {
+    name: "not localize revert",
+    input: ".foo { animation-name: revert-layer; }",
+    expected: ":local(.foo) { animation-name: revert-layer; }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: \\@bounce; }",
+    expected: ":local(.foo) { animation: :local(\\@bounce); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: bou\\@nce; }",
+    expected: ":local(.foo) { animation: :local(bou\\@nce); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: \\ as; }",
+    expected: ":local(.foo) { animation: :local(\\ as); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: t\\ t; }",
+    expected: ":local(.foo) { animation: :local(t\\ t); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: -\\a; }",
+    expected: ":local(.foo) { animation: :local(-\\a); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: --\\a; }",
+    expected: ":local(.foo) { animation: :local(--\\a); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: \\a; }",
+    expected: ":local(.foo) { animation: :local(\\a); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: -\\a; }",
+    expected: ":local(.foo) { animation: :local(-\\a); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: --; }",
+    expected: ":local(.foo) { animation: :local(--); }",
+  },
+  {
+    name: "localize animation using special characters",
+    input: ".foo { animation: 😃bounce😃; }",
+    expected: ":local(.foo) { animation: :local(😃bounce😃); }",
+  },
+  {
+    name: "not localize revert",
+    input: ".foo { animation: --foo; }",
+    expected: ":local(.foo) { animation: :local(--foo); }",
+  },
+  {
+    name: "localize animation",
+    input: ".foo { animation: a; }",
+    expected: ":local(.foo) { animation: :local(a); }",
+  },
+  {
     name: "localize animation",
     input: ".foo { animation: bar 5s, foobar; }",
     expected: ":local(.foo) { animation: :local(bar) 5s, :local(foobar); }",
@@ -204,23 +289,20 @@ const tests = [
     expected: ":local(.foo) { animation: 1s :local(foo); }",
   },
   {
-    name:
-      "handle animations where the first value is not the animation name whilst also using keywords",
+    name: "handle animations where the first value is not the animation name whilst also using keywords",
     input: ".foo { animation: 1s normal ease-out infinite foo; }",
     expected:
       ":local(.foo) { animation: 1s normal ease-out infinite :local(foo); }",
   },
   {
-    name:
-      "not treat animation curve as identifier of animation name even if it separated by comma",
+    name: "not treat animation curve as identifier of animation name even if it separated by comma",
     input:
       ".foo { animation: slide-right 300ms forwards ease-out, fade-in 300ms forwards ease-out; }",
     expected:
       ":local(.foo) { animation: :local(slide-right) 300ms forwards ease-out, :local(fade-in) 300ms forwards ease-out; }",
   },
   {
-    name:
-      'not treat "start" and "end" keywords in steps() function as identifiers',
+    name: 'not treat "start" and "end" keywords in steps() function as identifiers',
     input: [
       ".foo { animation: spin 1s steps(12, end) infinite; }",
       ".foo { animation: spin 1s STEPS(12, start) infinite; }",
@@ -302,6 +384,18 @@ const tests = [
     input: "@keyframes foo { from { color: red; } to { color: blue; } }",
     expected:
       "@keyframes :local(foo) { from { color: red; } to { color: blue; } }",
+  },
+  {
+    name: "localize keyframes starting with special characters",
+    input: "@keyframes \\@foo { from { color: red; } to { color: blue; } }",
+    expected:
+      "@keyframes :local(\\@foo) { from { color: red; } to { color: blue; } }",
+  },
+  {
+    name: "localize keyframes containing special characters",
+    input: "@keyframes f\\@oo { from { color: red; } to { color: blue; } }",
+    expected:
+      "@keyframes :local(f\\@oo) { from { color: red; } to { color: blue; } }",
   },
   {
     name: "localize keyframes in global default mode",
