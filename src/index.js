@@ -348,7 +348,8 @@ function localizeDeclaration(declaration, context) {
     // An ident-start code point, a digit, or U+002D HYPHEN-MINUS (-).
 
     // We don't validate `hex digits`, because we don't need it, it is work of linters.
-    const validIdent = /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-)((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
+    const validIdent =
+      /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-)((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
 
     /*
     The spec defines some keywords that you can use to describe properties such as the timing

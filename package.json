@@ -28,9 +28,8 @@
     "test:only": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage --collectCoverageFrom=\"src/**/*\"",
-    "pretest": "yarn lint",
     "test": "yarn test:coverage",
-    "prepublishOnly": "yarn test"
+    "prepublishOnly": "yarn lint && yarn test"
   },
   "dependencies": {
     "icss-utils": "^5.0.0",
