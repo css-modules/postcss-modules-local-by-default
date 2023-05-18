@@ -149,9 +149,19 @@ function localizeNode(rule, mode, localAliasMap) {
               hasLocals: false,
               explicit: context.explicit,
             };
-            newNodes = node.map((childNode) =>
-              transform(childNode, childContext)
-            );
+            newNodes = node.map((childNode) => {
+              const newContext = {
+                ...childContext,
+                enforceNoSpacing: false,
+              };
+
+              const result = transform(childNode, newContext);
+
+              childContext.global = newContext.global;
+              childContext.hasLocals = newContext.hasLocals;
+
+              return result;
+            });
 
             node = node.clone();
             node.nodes = normalizeNodeArray(newNodes);

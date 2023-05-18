@@ -277,6 +277,51 @@ const tests = [
     expected: ".foo { animation: foo; animation-name: bar; }",
   },
   {
+    name: "handle nested global",
+    input: ":global .a:not(:global .b) {}",
+    expected: ".a:not(.b) {}",
+  },
+  {
+    name: "handle nested global #1",
+    input: ":global .a:not(:global .b:not(:global .c)) {}",
+    expected: ".a:not(.b:not(.c)) {}",
+  },
+  {
+    name: "handle nested global #2",
+    input: ":local .a:not(:not(:not(:global .c))) {}",
+    expected: ":local(.a):not(:not(:not(.c))) {}",
+  },
+  {
+    name: "handle nested global #3",
+    input: ":global .a:not(:global .b, :global .c) {}",
+    expected: ".a:not(.b, .c) {}",
+  },
+  {
+    name: "handle nested global #4",
+    input: ":local .a:not(:global .b, :local .c) {}",
+    expected: ":local(.a):not(.b, :local(.c)) {}",
+  },
+  {
+    name: "handle nested global #5",
+    input: ":global .a:not(:local .b, :global .c) {}",
+    expected: ".a:not(:local(.b), .c) {}",
+  },
+  {
+    name: "handle nested global #6",
+    input: ":global .a:not(.b, .c) {}",
+    expected: ".a:not(.b, .c) {}",
+  },
+  {
+    name: "handle nested global #7",
+    input: ":local .a:not(.b, .c) {}",
+    expected: ":local(.a):not(:local(.b), :local(.c)) {}",
+  },
+  {
+    name: "handle nested global #8",
+    input: ":global .a:not(:local .b, .c) {}",
+    expected: ".a:not(:local(.b), :local(.c)) {}",
+  },
+  {
     name: "handle a complex animation rule",
     input:
       ".foo { animation: foo, bar 5s linear 2s infinite alternate, barfoo 1s; }",
@@ -738,6 +783,11 @@ const tests = [
     name: "throw on invalid global class usage",
     input: ":global(#) {}",
     error: /Invalid class or id selector syntax/,
+  },
+  {
+    name: "throw on invalid global class usage",
+    input: ":global(.a:not(:global .b, :global .c)) {}",
+    error: /A :global is not allowed inside of a :global/,
   },
   /*
   Bug in postcss-selector-parser
