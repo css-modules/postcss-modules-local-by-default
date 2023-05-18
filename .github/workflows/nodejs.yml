@@ -1,4 +1,4 @@
-name: css-loader
+name: test
 
 on:
   push:
