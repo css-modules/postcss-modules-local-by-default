@@ -302,15 +302,6 @@ function localizeDeclNode(node, context) {
   return node;
 }
 
-function isWordAFunctionArgument(wordNode, functionNode) {
-  return functionNode
-    ? functionNode.nodes.some(
-        (functionNodeChild) =>
-          functionNodeChild.sourceIndex === wordNode.sourceIndex
-      )
-    : false;
-}
-
 // `none` is special value, other is global values
 const specialKeywords = [
   "none",
@@ -373,51 +364,59 @@ function localizeDeclaration(declaration, context) {
     animation name of infinite from the second.
     */
     const animationKeywords = {
+      // animation-direction
+      $normal: 1,
+      $reverse: 1,
       $alternate: 1,
       "$alternate-reverse": 1,
+      // animation-fill-mode
+      $forwards: 1,
       $backwards: 1,
       $both: 1,
+      // animation-iteration-count
+      $infinite: 1,
+      // animation-play-state
+      $paused: 1,
+      $running: 1,
+      // animation-timing-function
       $ease: 1,
       "$ease-in": 1,
-      "$ease-in-out": 1,
       "$ease-out": 1,
-      $forwards: 1,
-      $infinite: 1,
+      "$ease-in-out": 1,
       $linear: 1,
-      $none: Infinity, // No matter how many times you write none, it will never be an animation name
-      $normal: 1,
-      $paused: 1,
-      $reverse: 1,
-      $running: 1,
       "$step-end": 1,
       "$step-start": 1,
+      // Special
+      $none: Infinity, // No matter how many times you write none, it will never be an animation name
+      // Global values
       $initial: Infinity,
       $inherit: Infinity,
       $unset: Infinity,
       $revert: Infinity,
       "$revert-layer": Infinity,
     };
-
-    const didParseAnimationName = false;
     let parsedAnimationKeywords = {};
-    let stepsFunctionNode = null;
     const valueNodes = valueParser(declaration.value).walk((node) => {
-      /* If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh. */
+      // If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh.
       if (node.type === "div") {
         parsedAnimationKeywords = {};
+
+        return;
       }
-      if (node.type === "function" && node.value.toLowerCase() === "steps") {
-        stepsFunctionNode = node;
+      // Do not handle nested functions
+      else if (node.type === "function") {
+        return false;
       }
-      const value =
-        node.type === "word" &&
-        !isWordAFunctionArgument(node, stepsFunctionNode)
-          ? node.value.toLowerCase()
-          : null;
+      // Ignore all except word
+      else if (node.type !== "word") {
+        return;
+      }
+
+      const value = node.type === "word" ? node.value.toLowerCase() : null;
 
       let shouldParseAnimationName = false;
 
-      if (!didParseAnimationName && value && validIdent.test(value)) {
+      if (value && validIdent.test(value)) {
         if ("$" + value in animationKeywords) {
           parsedAnimationKeywords["$" + value] =
             "$" + value in parsedAnimationKeywords
@@ -438,6 +437,7 @@ function localizeDeclaration(declaration, context) {
         localizeNextItem: shouldParseAnimationName && !context.global,
         localAliasMap: context.localAliasMap,
       };
+
       return localizeDeclNode(node, subContext);
     });
 

@@ -251,14 +251,49 @@ const tests = [
     expected: ":local(.foo) { animation: :local(--foo); }",
   },
   {
+    name: "not localize name in nested function",
+    input: ".foo { animation: fade .2s var(--easeOutQuart) .1s forwards }",
+    expected:
+      ":local(.foo) { animation: :local(fade) .2s var(--easeOutQuart) .1s forwards }",
+  },
+  {
+    name: "not localize name in nested function #2",
+    input: ".foo { animation: fade .2s env(FOO_BAR) .1s forwards, name }",
+    expected:
+      ":local(.foo) { animation: :local(fade) .2s env(FOO_BAR) .1s forwards, :local(name) }",
+  },
+  {
+    name: "not localize name in nested function #3",
+    input: ".foo { animation: var(--foo-bar) .1s forwards, name }",
+    expected:
+      ":local(.foo) { animation: var(--foo-bar) .1s forwards, :local(name) }",
+  },
+  {
+    name: "not localize name in nested function #3",
+    input: ".foo { animation: var(--foo-bar) .1s forwards name, name }",
+    expected:
+      ":local(.foo) { animation: var(--foo-bar) .1s forwards :local(name), :local(name) }",
+  },
+  {
     name: "localize animation",
     input: ".foo { animation: a; }",
     expected: ":local(.foo) { animation: :local(a); }",
   },
   {
-    name: "localize animation",
+    name: "localize animation #2",
     input: ".foo { animation: bar 5s, foobar; }",
     expected: ":local(.foo) { animation: :local(bar) 5s, :local(foobar); }",
+  },
+  {
+    name: "localize animation #3",
+    input: ".foo { animation: ease ease; }",
+    expected: ":local(.foo) { animation: ease :local(ease); }",
+  },
+  {
+    name: "localize animation #4",
+    input: ".foo { animation: 0s ease 0s 1 normal none test running; }",
+    expected:
+      ":local(.foo) { animation: 0s ease 0s 1 normal none :local(test) running; }",
   },
   {
     name: "localize animation with vendor prefix",
