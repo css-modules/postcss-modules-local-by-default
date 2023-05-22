@@ -3,7 +3,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [4.0.1](https://github.com/postcss-modules-local-by-default/compare/v4.0.0-rc.4...v4.0.1) - 2023-05-19
+## [4.0.2](https://github.com/postcss-modules-local-by-default/compare/v4.0.1...v4.0.2) - 2023-05-23
+
+### Fixes
+
+- don't handle identifiers in nested function for the `animation` property
+
+## [4.0.1](https://github.com/postcss-modules-local-by-default/compare/v4.0.0...v4.0.1) - 2023-05-19
 
 ### Fixes
 
