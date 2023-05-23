@@ -318,7 +318,7 @@ function localizeDeclarationValues(localize, declaration, context) {
   valueNodes.walk((node, index, nodes) => {
     if (
       node.type === "function" &&
-      (node.value === "var" || node.value === "env")
+      (node.value.toLowerCase() === "var" || node.value.toLowerCase() === "env")
     ) {
       return false;
     }
