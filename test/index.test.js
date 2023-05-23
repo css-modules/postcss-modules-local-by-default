@@ -161,6 +161,16 @@ const tests = [
     expected: ":local(.foo) { animation-name: :local(bar); }",
   },
   {
+    name: "not localize animation-name in a var function",
+    input: ".foo { animation-name: var(--bar); }",
+    expected: ":local(.foo) { animation-name: var(--bar); }",
+  },
+  {
+    name: "not localize animation-name in an env function",
+    input: ".foo { animation-name: env(bar); }",
+    expected: ":local(.foo) { animation-name: env(bar); }",
+  },
+  {
     name: "not localize a single animation-delay",
     input: ".foo { animation-delay: 1s; }",
     expected: ":local(.foo) { animation-delay: 1s; }",
