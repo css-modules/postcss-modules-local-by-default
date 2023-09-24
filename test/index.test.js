@@ -850,6 +850,24 @@ const tests = [
     options: { mode: "pure" },
     expected: ":local(.foo) { &:hover { a_value: some-value; } }",
   },
+  {
+    name: "consider selector & statements as pure",
+    input: ".foo { html &:hover { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { html &:hover { a_value: some-value; } }",
+  },
+  {
+    name: "consider selector & statements as pure",
+    input: ".foo { &:global(.bar) { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { &.bar { a_value: some-value; } }",
+  },
+  {
+    name: "throw on nested & selectors without a local selector",
+    input: ":global(.foo) { &:hover { a_value: some-value; } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
   /*
   Bug in postcss-selector-parser
   {
