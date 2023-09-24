@@ -844,6 +844,12 @@ const tests = [
     input: ":global(.a:not(:global .b, :global .c)) {}",
     error: /A :global is not allowed inside of a :global/,
   },
+  {
+    name: "consider & statements as pure",
+    input: ".foo { &:hover { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { &:hover { a_value: some-value; } }",
+  },
   /*
   Bug in postcss-selector-parser
   {
