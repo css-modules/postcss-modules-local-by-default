@@ -357,7 +357,7 @@ function localizeDeclaration(declaration, context) {
 
     // We don't validate `hex digits`, because we don't need it, it is work of linters.
     const validIdent =
-      /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-)((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
+      /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-(?![0-9]))((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
 
     /*
     The spec defines some keywords that you can use to describe properties such as the timing

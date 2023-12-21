@@ -864,6 +864,21 @@ const tests = [
     options: { mode: "pure" },
     expected: ":export { foo: __foo; }",
   },
+  {
+    name: "handle negative animation-delay in animation shorthand",
+    input: ".foo { animation: 1s -500ms; }",
+    expected: ":local(.foo) { animation: 1s -500ms; }",
+  },
+  {
+    name: "handle negative animation-delay in animation shorthand #1",
+    input: ".foo { animation: 1s -500.0ms; }",
+    expected: ":local(.foo) { animation: 1s -500.0ms; }",
+  },
+  {
+    name: "handle negative animation-delay in animation shorthand #2",
+    input: ".foo { animation: 1s -500.0ms -a_value; }",
+    expected: ":local(.foo) { animation: 1s -500.0ms :local(-a_value); }",
+  },
 ];
 
 function process(css, options) {
