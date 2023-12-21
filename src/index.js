@@ -230,6 +230,11 @@ function localizeNode(rule, mode, localAliasMap) {
 
         break;
       }
+      case "nesting": {
+        if (node.value === "&") {
+          context.hasLocals = true;
+        }
+      }
     }
 
     context.lastWasSpacing = false;
