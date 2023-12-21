@@ -389,20 +389,23 @@ const tests = [
     expected: ":local(.foo) { animation: 1s :local(foo); }",
   },
   {
-    name: "handle animations where the first value is not the animation name whilst also using keywords",
+    name:
+      "handle animations where the first value is not the animation name whilst also using keywords",
     input: ".foo { animation: 1s normal ease-out infinite foo; }",
     expected:
       ":local(.foo) { animation: 1s normal ease-out infinite :local(foo); }",
   },
   {
-    name: "not treat animation curve as identifier of animation name even if it separated by comma",
+    name:
+      "not treat animation curve as identifier of animation name even if it separated by comma",
     input:
       ".foo { animation: slide-right 300ms forwards ease-out, fade-in 300ms forwards ease-out; }",
     expected:
       ":local(.foo) { animation: :local(slide-right) 300ms forwards ease-out, :local(fade-in) 300ms forwards ease-out; }",
   },
   {
-    name: 'not treat "start" and "end" keywords in steps() function as identifiers',
+    name:
+      'not treat "start" and "end" keywords in steps() function as identifiers',
     input: [
       ".foo { animation: spin 1s steps(12, end) infinite; }",
       ".foo { animation: spin 1s STEPS(12, start) infinite; }",
@@ -863,6 +866,21 @@ const tests = [
     input: ":export { foo: __foo; }",
     options: { mode: "pure" },
     expected: ":export { foo: __foo; }",
+  },
+  {
+    name: "handle negative animation-delay in animation shorthand",
+    input: ".foo { animation: 1s -500ms; }",
+    expected: ":local(.foo) { animation: 1s -500ms; }",
+  },
+  {
+    name: "handle negative animation-delay in animation shorthand #1",
+    input: ".foo { animation: 1s -500.0ms; }",
+    expected: ":local(.foo) { animation: 1s -500.0ms; }",
+  },
+  {
+    name: "handle negative animation-delay in animation shorthand #2",
+    input: ".foo { animation: 1s -500.0ms -a_value; }",
+    expected: ":local(.foo) { animation: 1s -500.0ms :local(-a_value); }",
   },
 ];
 
