@@ -389,23 +389,20 @@ const tests = [
     expected: ":local(.foo) { animation: 1s :local(foo); }",
   },
   {
-    name:
-      "handle animations where the first value is not the animation name whilst also using keywords",
+    name: "handle animations where the first value is not the animation name whilst also using keywords",
     input: ".foo { animation: 1s normal ease-out infinite foo; }",
     expected:
       ":local(.foo) { animation: 1s normal ease-out infinite :local(foo); }",
   },
   {
-    name:
-      "not treat animation curve as identifier of animation name even if it separated by comma",
+    name: "not treat animation curve as identifier of animation name even if it separated by comma",
     input:
       ".foo { animation: slide-right 300ms forwards ease-out, fade-in 300ms forwards ease-out; }",
     expected:
       ":local(.foo) { animation: :local(slide-right) 300ms forwards ease-out, :local(fade-in) 300ms forwards ease-out; }",
   },
   {
-    name:
-      'not treat "start" and "end" keywords in steps() function as identifiers',
+    name: 'not treat "start" and "end" keywords in steps() function as identifiers',
     input: [
       ".foo { animation: spin 1s steps(12, end) infinite; }",
       ".foo { animation: spin 1s STEPS(12, start) infinite; }",
