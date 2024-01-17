@@ -1022,6 +1022,243 @@ const tests = [
     input: ".foo { animation: 1s -500.0ms -a_value; }",
     expected: ":local(.foo) { animation: 1s -500.0ms :local(-a_value); }",
   },
+  {
+    name: "@scope at-rule",
+    input: `
+.article-header {
+  color: red;
+}
+
+.article-body {
+  color: blue;
+}
+
+@scope      (.article-body)     to       (.article-header)        {
+  .article-body {
+    border: 5px solid black;
+    background-color: goldenrod;
+  }
+}
+
+@scope(.article-body)to(.article-header){
+  .article-footer {
+    border: 5px solid black;
+  }
+}
+
+@scope    (   .article-body   )    {
+  img {
+    border: 5px solid black;
+    background-color: goldenrod;
+  }
+}
+`,
+    expected: `
+:local(.article-header) {
+  color: red;
+}
+
+:local(.article-body) {
+  color: blue;
+}
+
+@scope      (:local(.article-body)) to (:local(.article-header))        {
+  :local(.article-body) {
+    border: 5px solid black;
+    background-color: goldenrod;
+  }
+}
+
+@scope(:local(.article-body)) to (:local(.article-header)){
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+}
+
+@scope    (:local(.article-body))    {
+  img {
+    border: 5px solid black;
+    background-color: goldenrod;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #1",
+    input: `
+@scope (.article-body) to (figure) {
+  .article-footer {
+    border: 5px solid black;
+  }
+}
+`,
+    expected: `
+@scope (:local(.article-body)) to (figure) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #2",
+    input: `
+@scope (:local(.article-body)) to (:global(.class)) {
+  .article-footer {
+    border: 5px solid black;
+  }
+  :local(.class-1) {
+    color: red;
+  }
+  :global(.class-2) {
+    color: blue;
+  }
+}
+`,
+    expected: `
+@scope (:local(.article-body)) to (.class) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+  :local(.class-1) {
+    color: red;
+  }
+  .class-2 {
+    color: blue;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #3",
+    options: { mode: "global" },
+    input: `
+@scope (:local(.article-header)) to (:global(.class)) {
+  .article-footer {
+    border: 5px solid black;
+  }
+  :local(.class-1) {
+    color: red;
+  }
+  :global(.class-2) {
+    color: blue;
+  }
+}
+`,
+    expected: `
+@scope (:local(.article-header)) to (.class) {
+  .article-footer {
+    border: 5px solid black;
+  }
+  :local(.class-1) {
+    color: red;
+  }
+  .class-2 {
+    color: blue;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #4",
+    options: { mode: "pure" },
+    input: `
+@scope (.article-header) to (.class) {
+  .article-footer {
+    border: 5px solid black;
+  }
+  .class-1 {
+    color: red;
+  }
+  .class-2 {
+    color: blue;
+  }
+}
+`,
+    expected: `
+@scope (:local(.article-header)) to (:local(.class)) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+  :local(.class-1) {
+    color: red;
+  }
+  :local(.class-2) {
+    color: blue;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #5",
+    input: `
+@scope (.article-header) to (.class) {
+  .article-footer {
+    src: url("./font.woff");
+  }
+}
+`,
+    options: {
+      rewriteUrl: function (global, url) {
+        const mode = global ? "global" : "local";
+        return "(" + mode + ")" + url + '"' + mode + '"';
+      },
+    },
+    expected: `
+@scope (:local(.article-header)) to (:local(.class)) {
+  :local(.article-footer) {
+    src: url("(local)./font.woff\\"local\\"");
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #6",
+    input: `
+.foo {
+  @scope (.article-header) to (.class) {
+    :scope {
+      background: blue;
+    }
+
+    .bar {
+      color: red;
+    }
+  }
+}
+`,
+    expected: `
+:local(.foo) {
+  @scope (:local(.article-header)) to (:local(.class)) {
+    :scope {
+      background: blue;
+    }
+
+    :local(.bar) {
+      color: red;
+    }
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule #7",
+    options: { mode: "pure" },
+    input: `
+@scope (:global(.article-header).foo) to (:global(.class).bar) {
+  .bar {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (.article-header:local(.foo)) to (.class:local(.bar)) {
+  :local(.bar) {
+    color: red;
+  }
+}
+`,
+  },
 ];
 
 function process(css, options) {
