@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [4.0.4](https://github.com/postcss-modules-local-by-default/compare/v4.0.3...v4.0.4) - 2024-01-17
+
+### Fixes
+
+- handle `@scope` at-rule
+- css nesting
+- do not tread negative values as identifiers in the animation shorthand
+
 ## [4.0.3](https://github.com/postcss-modules-local-by-default/compare/v4.0.2...v4.0.3) - 2023-05-23
 
 ### Fixes
