@@ -868,6 +868,125 @@ const tests = [
     options: { mode: "pure" },
     error: /is not pure/,
   },
+  {
+    name: "css nesting",
+    input: `
+.foo {
+  &.class {
+    a_value: some-value;
+  }
+
+  @media screen and (min-width: 900px) {
+    b_value: some-value;
+
+    .bar {
+      c_value: some-value;
+    }
+
+    &.baz {
+      c_value: some-value;
+    }
+  }
+}`,
+    expected: `
+:local(.foo) {
+  &:local(.class) {
+    a_value: some-value;
+  }
+
+  @media screen and (min-width: 900px) {
+    b_value: some-value;
+
+    :local(.bar) {
+      c_value: some-value;
+    }
+
+    &:local(.baz) {
+      c_value: some-value;
+    }
+  }
+}`,
+  },
+  {
+    name: "css nesting #1",
+    options: { mode: "global" },
+    input: `
+:local(.foo) {
+  &:local(.class) {
+    a_value: some-value;
+  }
+
+  @media screen and (min-width: 900px) {
+    b_value: some-value;
+
+    :local(.bar) {
+      c_value: some-value;
+    }
+
+    &:local(.baz) {
+      c_value: some-value;
+    }
+  }
+}`,
+    expected: `
+:local(.foo) {
+  &:local(.class) {
+    a_value: some-value;
+  }
+
+  @media screen and (min-width: 900px) {
+    b_value: some-value;
+
+    :local(.bar) {
+      c_value: some-value;
+    }
+
+    &:local(.baz) {
+      c_value: some-value;
+    }
+  }
+}`,
+  },
+  {
+    name: "css nesting #2",
+    options: { mode: "pure" },
+    input: `
+.foo {
+  &.class {
+    a_value: some-value;
+  }
+
+  @media screen and (min-width: 900px) {
+    b_value: some-value;
+
+    .bar {
+      c_value: some-value;
+    }
+
+    &.baz {
+      c_value: some-value;
+    }
+  }
+}`,
+    expected: `
+:local(.foo) {
+  &:local(.class) {
+    a_value: some-value;
+  }
+
+  @media screen and (min-width: 900px) {
+    b_value: some-value;
+
+    :local(.bar) {
+      c_value: some-value;
+    }
+
+    &:local(.baz) {
+      c_value: some-value;
+    }
+  }
+}`,
+  },
   /*
   Bug in postcss-selector-parser
   {
