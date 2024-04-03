@@ -1052,6 +1052,12 @@ const tests = [
     background-color: goldenrod;
   }
 }
+
+@scope {
+  :scope {
+    color: red;
+  }
+}
 `,
     expected: `
 :local(.article-header) {
@@ -1079,6 +1085,12 @@ const tests = [
   img {
     border: 5px solid black;
     background-color: goldenrod;
+  }
+}
+
+@scope {
+  :scope {
+    color: red;
   }
 }
 `,
