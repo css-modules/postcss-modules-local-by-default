@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [4.0.5](https://github.com/postcss-modules-local-by-default/compare/v4.0.4...v4.0.5) - 2024-04-03
+
+### Fixes
+
+- don't break the `@scope` at-rule without params
+
 ## [4.0.4](https://github.com/postcss-modules-local-by-default/compare/v4.0.3...v4.0.4) - 2024-01-17
 
 ### Fixes
