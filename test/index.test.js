@@ -869,6 +869,24 @@ const tests = [
     error: /is not pure/,
   },
   {
+    name: "consider nonlocal children of a pure parent as pure",
+    input: ".foo { span { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { span { a_value: some-value; } }",
+  },
+  {
+    name: "consider nested nonlocal children of a pure parent as pure",
+    input: ".foo { span { a { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { span { a { a_value: some-value; } } }",
+  },
+  {
+    name: "throw on mixed parents",
+    input: ".foo, html { span { a_value: some-value; } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
     name: "css nesting",
     input: `
 .foo {

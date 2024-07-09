@@ -590,6 +590,7 @@ module.exports = (options = {}) => {
             }
           });
 
+          const localRules = new Set();
           root.walkRules((rule) => {
             if (
               rule.parent &&
@@ -605,13 +606,23 @@ module.exports = (options = {}) => {
             context.options = options;
             context.localAliasMap = localAliasMap;
 
-            if (pureMode && context.hasPureGlobals) {
+            if (
+              pureMode &&
+              context.hasPureGlobals &&
+              !localRules.has(rule.parent)
+            ) {
               throw rule.error(
                 'Selector "' +
                   rule.selector +
                   '" is not pure ' +
                   "(pure selectors must contain at least one local class or id)"
               );
+            } else {
+              // Once a parent is pure all children are also pure
+              // For example the span inside this .foo is also pure
+              // although it is not local itself:
+              // .foo { span { color: red; } }
+              localRules.add(rule);
             }
 
             rule.selector = context.selector;
