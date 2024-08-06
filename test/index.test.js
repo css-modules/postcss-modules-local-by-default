@@ -851,6 +851,12 @@ const tests = [
     expected: ":local(.foo) { &:hover { a_value: some-value; } }",
   },
   {
+    name: "consider global inside local as pure",
+    input: ".foo button { a_value: some-value; }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) button { a_value: some-value; }",
+  },
+  {
     name: "consider selector & statements as pure",
     input: ".foo { html &:hover { a_value: some-value; } }",
     options: { mode: "pure" },
