@@ -887,6 +887,12 @@ const tests = [
     error: /is not pure/,
   },
   {
+    name: "throw on global styles with a local selector",
+    input: `html { a_value: some-value; .foo { a_value: some-value; } }`,
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
     name: "css nesting",
     input: `
 .foo {
