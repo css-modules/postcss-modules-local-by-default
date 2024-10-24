@@ -328,6 +328,17 @@ function localizeDeclarationValues(localize, declaration, context) {
       return false;
     }
 
+    // replace `animation-name: global(example)` with `animation-name: example`
+    if (
+      node.type === "function" &&
+      node.value.toLowerCase() === "global" &&
+      /animation(-name)$/i.test(declaration.prop) &&
+      node.nodes.length === 1
+    ) {
+      Object.assign(node, node.nodes[0]);
+      return;
+    }
+
     if (
       node.type === "word" &&
       specialKeywords.includes(node.value.toLowerCase())
@@ -414,9 +425,13 @@ function localizeDeclaration(declaration, context) {
         parsedAnimationKeywords = {};
 
         return;
-      }
-      // Do not handle nested functions
-      else if (node.type === "function") {
+      } else if (node.type === "function") {
+        // replace `animation: global(example)` with `animation-name: example`
+        if (node.value.toLowerCase() === "global" && node.nodes.length === 1) {
+          Object.assign(node, node.nodes[0]);
+          return false;
+        }
+        // Do not handle nested functions
         return false;
       }
       // Ignore all except word
