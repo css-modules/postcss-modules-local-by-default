@@ -1005,30 +1005,30 @@ const tests = [
   */
   {
     name: "consider :import statements pure",
-    input: ':import("~/lol.css") { a_value: some-value; }',
+    input: ':import("~/lol.css") { foo: __foo; }',
     options: { mode: "pure" },
-    expected: ':import("~/lol.css") { a_value: some-value; }',
+    expected: ':import("~/lol.css") { foo: __foo; }',
   },
   {
     name: "consider :export statements pure",
-    input: ":export { a_value: some-value; }",
+    input: ":export { foo: __foo; }",
     options: { mode: "pure" },
-    expected: ":export { a_value: some-value; }",
+    expected: ":export { foo: __foo; }",
   },
   {
     name: "handle negative animation-delay in animation shorthand",
-    input: ".foo { a_value: some-value; }",
-    expected: ":local(.foo) { a_value: some-value; }",
+    input: ".foo { animation: 1s -500ms; }",
+    expected: ":local(.foo) { animation: 1s -500ms; }",
   },
   {
     name: "handle negative animation-delay in animation shorthand #1",
-    input: ".foo { a_value: some-value; }",
-    expected: ":local(.foo) { a_value: some-value; }",
+    input: ".foo { animation: 1s -500.0ms; }",
+    expected: ":local(.foo) { animation: 1s -500.0ms; }",
   },
   {
     name: "handle negative animation-delay in animation shorthand #2",
-    input: ".foo { a_value: some-value; }",
-    expected: ":local(.foo) { a_value: some-value; }",
+    input: ".foo { animation: 1s -500.0ms -a_value; }",
+    expected: ":local(.foo) { animation: 1s -500.0ms :local(-a_value); }",
   },
   {
     name: "@scope at-rule",
