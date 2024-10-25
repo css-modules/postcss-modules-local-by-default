@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node-version: [lts/*]
+        node-version: ["lts/*"]
 
     runs-on: ${{ matrix.os }}
 
@@ -32,15 +32,17 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          architecture: "x64"
           cache: "yarn"
+          cache-dependency-path: "yarn.lock"
 
       - name: Install dependencies
         run: yarn --frozen-lockfile
@@ -54,7 +56,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [10.x, 12.x, 14.x, 16.x, 18.x, 20.x]
+        node-version: ["10", "12", "14", "16", "18", "20"]
         webpack-version: [latest]
 
     runs-on: ${{ matrix.os }}
@@ -68,13 +70,15 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: git config --global core.autocrlf input
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "${{ matrix.node-version }}"
+          architecture: "x64"
           cache: "yarn"
+          cache-dependency-path: "yarn.lock"
 
       - name: Install dependencies
         run: yarn --frozen-lockfile
