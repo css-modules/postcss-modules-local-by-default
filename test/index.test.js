@@ -7,8 +7,8 @@ const name = require("../package.json").name;
 const tests = [
   {
     name: "scope selectors",
-    input: ".foobar {}",
-    expected: ":local(.foobar) {}",
+    input: ".foobar { a_value: some-value; }",
+    expected: ":local(.foobar) { a_value: some-value; }",
   },
   {
     name: "scope escaped selectors",
@@ -17,8 +17,8 @@ const tests = [
   },
   {
     name: "scope ids",
-    input: "#foobar {}",
-    expected: ":local(#foobar) {}",
+    input: "#foobar { a_value: some-value; }",
+    expected: ":local(#foobar) { a_value: some-value; }",
   },
   {
     name: "scope escaped ids",
@@ -32,128 +32,132 @@ const tests = [
   },
   {
     name: "scope multiple selectors",
-    input: ".foo, .baz {}",
-    expected: ":local(.foo), :local(.baz) {}",
+    input: ".foo, .baz { a_value: some-value; }",
+    expected: ":local(.foo), :local(.baz) { a_value: some-value; }",
   },
   {
     name: "scope sibling selectors",
-    input: ".foo ~ .baz {}",
-    expected: ":local(.foo) ~ :local(.baz) {}",
+    input: ".foo ~ .baz { a_value: some-value; }",
+    expected: ":local(.foo) ~ :local(.baz) { a_value: some-value; }",
   },
   {
     name: "scope psuedo elements",
-    input: ".foo:after {}",
-    expected: ":local(.foo):after {}",
+    input: ".foo:after { a_value: some-value; }",
+    expected: ":local(.foo):after { a_value: some-value; }",
   },
   {
     name: "scope media queries",
-    input: "@media only screen { .foo {} }",
-    expected: "@media only screen { :local(.foo) {} }",
+    input: "@media only screen { .foo { a_value: some-value; } }",
+    expected: "@media only screen { :local(.foo) { a_value: some-value; } }",
   },
   {
     name: "allow narrow global selectors",
-    input: ":global(.foo .bar) {}",
-    expected: ".foo .bar {}",
+    input: ":global(.foo .bar) { a_value: some-value; }",
+    expected: ".foo .bar { a_value: some-value; }",
   },
   {
     name: "allow narrow local selectors",
-    input: ":local(.foo .bar) {}",
-    expected: ":local(.foo) :local(.bar) {}",
+    input: ":local(.foo .bar) { a_value: some-value; }",
+    expected: ":local(.foo) :local(.bar) { a_value: some-value; }",
   },
   {
     name: "allow broad global selectors",
-    input: ":global .foo .bar {}",
-    expected: ".foo .bar {}",
+    input: ":global .foo .bar { a_value: some-value; }",
+    expected: ".foo .bar { a_value: some-value; }",
   },
   {
     name: "allow broad local selectors",
-    input: ":local .foo .bar {}",
-    expected: ":local(.foo) :local(.bar) {}",
+    input: ":local .foo .bar { a_value: some-value; }",
+    expected: ":local(.foo) :local(.bar) { a_value: some-value; }",
   },
   {
     name: "allow multiple narrow global selectors",
-    input: ":global(.foo), :global(.bar) {}",
-    expected: ".foo, .bar {}",
+    input: ":global(.foo), :global(.bar) { a_value: some-value; }",
+    expected: ".foo, .bar { a_value: some-value; }",
   },
   {
     name: "allow multiple broad global selectors",
-    input: ":global .foo, :global .bar {}",
-    expected: ".foo, .bar {}",
+    input: ":global .foo, :global .bar { a_value: some-value; }",
+    expected: ".foo, .bar { a_value: some-value; }",
   },
   {
     name: "allow multiple broad local selectors",
-    input: ":local .foo, :local .bar {}",
-    expected: ":local(.foo), :local(.bar) {}",
+    input: ":local .foo, :local .bar { a_value: some-value; }",
+    expected: ":local(.foo), :local(.bar) { a_value: some-value; }",
   },
   {
     name: "allow narrow global selectors nested inside local styles",
-    input: ".foo :global(.foo .bar) {}",
-    expected: ":local(.foo) .foo .bar {}",
+    input: ".foo :global(.foo .bar) { a_value: some-value; }",
+    expected: ":local(.foo) .foo .bar { a_value: some-value; }",
   },
   {
     name: "allow broad global selectors nested inside local styles",
-    input: ".foo :global .foo .bar {}",
-    expected: ":local(.foo) .foo .bar {}",
+    input: ".foo :global .foo .bar { a_value: some-value; }",
+    expected: ":local(.foo) .foo .bar { a_value: some-value; }",
   },
   {
     name: "allow parentheses inside narrow global selectors",
-    input: ".foo :global(.foo:not(.bar)) {}",
-    expected: ":local(.foo) .foo:not(.bar) {}",
+    input: ".foo :global(.foo:not(.bar)) { a_value: some-value; }",
+    expected: ":local(.foo) .foo:not(.bar) { a_value: some-value; }",
   },
   {
     name: "allow parentheses inside narrow local selectors",
-    input: ".foo :local(.foo:not(.bar)) {}",
-    expected: ":local(.foo) :local(.foo):not(:local(.bar)) {}",
+    input: ".foo :local(.foo:not(.bar)) { a_value: some-value; }",
+    expected:
+      ":local(.foo) :local(.foo):not(:local(.bar)) { a_value: some-value; }",
   },
   {
     name: "allow narrow global selectors appended to local styles",
-    input: ".foo:global(.foo.bar) {}",
-    expected: ":local(.foo).foo.bar {}",
+    input: ".foo:global(.foo.bar) { a_value: some-value; }",
+    expected: ":local(.foo).foo.bar { a_value: some-value; }",
   },
   {
     name: "ignore selectors that are already local",
-    input: ":local(.foobar) {}",
-    expected: ":local(.foobar) {}",
+    input: ":local(.foobar) { a_value: some-value; }",
+    expected: ":local(.foobar) { a_value: some-value; }",
   },
   {
     name: "ignore nested selectors that are already local",
-    input: ":local(.foo) :local(.bar) {}",
-    expected: ":local(.foo) :local(.bar) {}",
+    input: ":local(.foo) :local(.bar) { a_value: some-value; }",
+    expected: ":local(.foo) :local(.bar) { a_value: some-value; }",
   },
   {
     name: "ignore multiple selectors that are already local",
-    input: ":local(.foo), :local(.bar) {}",
-    expected: ":local(.foo), :local(.bar) {}",
+    input: ":local(.foo), :local(.bar) { a_value: some-value; }",
+    expected: ":local(.foo), :local(.bar) { a_value: some-value; }",
   },
   {
     name: "ignore sibling selectors that are already local",
-    input: ":local(.foo) ~ :local(.bar) {}",
-    expected: ":local(.foo) ~ :local(.bar) {}",
+    input: ":local(.foo) ~ :local(.bar) { a_value: some-value; }",
+    expected: ":local(.foo) ~ :local(.bar) { a_value: some-value; }",
   },
   {
     name: "ignore psuedo elements that are already local",
-    input: ":local(.foo):after {}",
-    expected: ":local(.foo):after {}",
+    input: ":local(.foo):after { a_value: some-value; }",
+    expected: ":local(.foo):after { a_value: some-value; }",
   },
   {
     name: "trim whitespace after empty broad selector",
-    input: ".bar :global :global {}",
-    expected: ":local(.bar) {}",
+    input: ".bar :global :global { a_value: some-value; }",
+    expected: ":local(.bar) { a_value: some-value; }",
   },
   {
     name: "broad global should be limited to selector",
-    input: ":global .foo, .bar :global, .foobar :global {}",
-    expected: ".foo, :local(.bar), :local(.foobar) {}",
+    input:
+      ":global .foo, .bar :global, .foobar :global { a_value: some-value; }",
+    expected: ".foo, :local(.bar), :local(.foobar) { a_value: some-value; }",
   },
   {
     name: "broad global should be limited to nested selector",
-    input: ".foo:not(:global .bar).foobar {}",
-    expected: ":local(.foo):not(.bar):local(.foobar) {}",
+    input: ".foo:not(:global .bar).foobar { a_value: some-value; }",
+    expected: ":local(.foo):not(.bar):local(.foobar) { a_value: some-value; }",
   },
   {
     name: "broad global and local should allow switching",
-    input: ".foo :global .bar :local .foobar :local .barfoo {}",
-    expected: ":local(.foo) .bar :local(.foobar) :local(.barfoo) {}",
+    input:
+      ".foo :global .bar :local .foobar :local .barfoo { a_value: some-value; }",
+    expected:
+      ":local(.foo) .bar :local(.foobar) :local(.barfoo) { a_value: some-value; }",
   },
   {
     name: "localize a single animation-name",
@@ -333,48 +337,49 @@ const tests = [
   },
   {
     name: "handle nested global",
-    input: ":global .a:not(:global .b) {}",
-    expected: ".a:not(.b) {}",
+    input: ":global .a:not(:global .b) { a_value: some-value; }",
+    expected: ".a:not(.b) { a_value: some-value; }",
   },
   {
     name: "handle nested global #1",
-    input: ":global .a:not(:global .b:not(:global .c)) {}",
-    expected: ".a:not(.b:not(.c)) {}",
+    input:
+      ":global .a:not(:global .b:not(:global .c)) { a_value: some-value; }",
+    expected: ".a:not(.b:not(.c)) { a_value: some-value; }",
   },
   {
     name: "handle nested global #2",
-    input: ":local .a:not(:not(:not(:global .c))) {}",
-    expected: ":local(.a):not(:not(:not(.c))) {}",
+    input: ":local .a:not(:not(:not(:global .c))) { a_value: some-value; }",
+    expected: ":local(.a):not(:not(:not(.c))) { a_value: some-value; }",
   },
   {
     name: "handle nested global #3",
-    input: ":global .a:not(:global .b, :global .c) {}",
-    expected: ".a:not(.b, .c) {}",
+    input: ":global .a:not(:global .b, :global .c) { a_value: some-value; }",
+    expected: ".a:not(.b, .c) { a_value: some-value; }",
   },
   {
     name: "handle nested global #4",
-    input: ":local .a:not(:global .b, :local .c) {}",
-    expected: ":local(.a):not(.b, :local(.c)) {}",
+    input: ":local .a:not(:global .b, :local .c) { a_value: some-value; }",
+    expected: ":local(.a):not(.b, :local(.c)) { a_value: some-value; }",
   },
   {
     name: "handle nested global #5",
-    input: ":global .a:not(:local .b, :global .c) {}",
-    expected: ".a:not(:local(.b), .c) {}",
+    input: ":global .a:not(:local .b, :global .c) { a_value: some-value; }",
+    expected: ".a:not(:local(.b), .c) { a_value: some-value; }",
   },
   {
     name: "handle nested global #6",
-    input: ":global .a:not(.b, .c) {}",
-    expected: ".a:not(.b, .c) {}",
+    input: ":global .a:not(.b, .c) { a_value: some-value; }",
+    expected: ".a:not(.b, .c) { a_value: some-value; }",
   },
   {
     name: "handle nested global #7",
-    input: ":local .a:not(.b, .c) {}",
-    expected: ":local(.a):not(:local(.b), :local(.c)) {}",
+    input: ":local .a:not(.b, .c) { a_value: some-value; }",
+    expected: ":local(.a):not(:local(.b), :local(.c)) { a_value: some-value; }",
   },
   {
     name: "handle nested global #8",
-    input: ":global .a:not(:local .b, .c) {}",
-    expected: ".a:not(:local(.b), :local(.c)) {}",
+    input: ":global .a:not(:local .b, .c) { a_value: some-value; }",
+    expected: ".a:not(:local(.b), :local(.c)) { a_value: some-value; }",
   },
   {
     name: "handle a complex animation rule",
@@ -441,15 +446,15 @@ const tests = [
   },
   {
     name: "default to global when mode provided",
-    input: ".foo {}",
+    input: ".foo { a_value: some-value; }",
     options: { mode: "global" },
-    expected: ".foo {}",
+    expected: ".foo { a_value: some-value; }",
   },
   {
     name: "default to local when mode provided",
-    input: ".foo {}",
+    input: ".foo { a_value: some-value; }",
     options: { mode: "local" },
-    expected: ":local(.foo) {}",
+    expected: ":local(.foo) { a_value: some-value; }",
   },
   {
     name: "use correct spacing",
@@ -481,9 +486,10 @@ const tests = [
   },
   {
     name: "localize keyframes",
-    input: "@keyframes foo { from { color: red; } to { color: blue; } }",
+    input:
+      "@keyframes foo { from: { a_value: some-value; } to { a_value: some-value; } }",
     expected:
-      "@keyframes :local(foo) { from { color: red; } to { color: blue; } }",
+      "@keyframes :local(foo) { from: { a_value: some-value; } to { a_value: some-value; } }",
   },
   {
     name: "localize keyframes starting with special characters",
@@ -499,9 +505,9 @@ const tests = [
   },
   {
     name: "localize keyframes in global default mode",
-    input: "@keyframes foo {}",
+    input: "@keyframes foo { a_value: some-value; }",
     options: { mode: "global" },
-    expected: "@keyframes foo {}",
+    expected: "@keyframes foo { a_value: some-value; }",
   },
   {
     name: "localize explicit keyframes",
@@ -522,25 +528,27 @@ const tests = [
   },
   {
     name: "incorrectly handle nested selectors",
-    input: ".bar:not(:global .foo, .baz) {}",
-    expected: ":local(.bar):not(.foo, .baz) {}",
+    input: ".bar:not(:global .foo, .baz) { a_value: some-value; }",
+    expected: ":local(.bar):not(.foo, .baz) { a_value: some-value; }",
   },
   {
     name: "compile in pure mode",
-    input: ':global(.foo).bar, [type="radio"] ~ .label, :not(.foo), #bar {}',
+    input:
+      ':global(.foo).bar, [type="radio"] ~ .label, :not(.foo), #bar { a_value: some-value; }',
     options: { mode: "pure" },
     expected:
-      '.foo:local(.bar), [type="radio"] ~ :local(.label), :not(:local(.foo)), :local(#bar) {}',
+      '.foo:local(.bar), [type="radio"] ~ :local(.label), :not(:local(.foo)), :local(#bar) { a_value: some-value; }',
   },
   {
     name: "compile explict global element",
-    input: ":global(input) {}",
-    expected: "input {}",
+    input: ":global(input) { a_value: some-value; }",
+    expected: "input { a_value: some-value; }",
   },
   {
     name: "compile explict global attribute",
-    input: ':global([type="radio"]), :not(:global [type="radio"]) {}',
-    expected: '[type="radio"], :not([type="radio"]) {}',
+    input:
+      ':global([type="radio"]), :not(:global [type="radio"]) { a_value: some-value; }',
+    expected: '[type="radio"], :not([type="radio"]) { a_value: some-value; }',
   },
   {
     name: "throw on invalid mode",
@@ -550,89 +558,89 @@ const tests = [
   },
   {
     name: "throw on inconsistent selector result",
-    input: ":global .foo, .bar {}",
+    input: ":global .foo, .bar { a_value: some-value; }",
     error: /Inconsistent/,
   },
   {
     name: "throw on nested :locals",
-    input: ":local(:local(.foo)) {}",
+    input: ":local(:local(.foo)) { a_value: some-value; }",
     error: /is not allowed inside/,
   },
   {
     name: "throw on nested :globals",
-    input: ":global(:global(.foo)) {}",
+    input: ":global(:global(.foo)) { a_value: some-value; }",
     error: /is not allowed inside/,
   },
   {
     name: "throw on nested mixed",
-    input: ":local(:global(.foo)) {}",
+    input: ":local(:global(.foo)) { a_value: some-value; }",
     error: /is not allowed inside/,
   },
   {
     name: "throw on nested broad :local",
-    input: ":global(:local .foo) {}",
+    input: ":global(:local .foo) { a_value: some-value; }",
     error: /is not allowed inside/,
   },
   {
     name: "throw on incorrect spacing with broad :global",
-    input: ".foo :global.bar {}",
+    input: ".foo :global.bar { a_value: some-value; }",
     error: /Missing whitespace after :global/,
   },
   {
     name: "throw on incorrect spacing with broad :local",
-    input: ".foo:local .bar {}",
+    input: ".foo:local .bar { a_value: some-value; }",
     error: /Missing whitespace before :local/,
   },
   {
     name: "throw on not pure selector (global class)",
-    input: ":global(.foo) {}",
+    input: ":global(.foo) { a_value: some-value; }",
     options: { mode: "pure" },
     error: /":global\(\.foo\)" is not pure/,
   },
   {
     name: "throw on not pure selector (with multiple 1)",
-    input: ".foo, :global(.bar) {}",
+    input: ".foo, :global(.bar) { a_value: some-value; }",
     options: { mode: "pure" },
     error: /".foo, :global\(\.bar\)" is not pure/,
   },
   {
     name: "throw on not pure selector (with multiple 2)",
-    input: ":global(.bar), .foo {}",
+    input: ":global(.bar), .foo { a_value: some-value; }",
     options: { mode: "pure" },
     error: /":global\(\.bar\), .foo" is not pure/,
   },
   {
     name: "throw on not pure selector (element)",
-    input: "input {}",
+    input: "input { a_value: some-value; }",
     options: { mode: "pure" },
     error: /"input" is not pure/,
   },
   {
     name: "throw on not pure selector (attribute)",
-    input: '[type="radio"] {}',
+    input: '[type="radio"] { a_value: some-value; }',
     options: { mode: "pure" },
     error: /"\[type="radio"\]" is not pure/,
   },
   {
     name: "throw on not pure keyframes",
-    input: "@keyframes :global(foo) {}",
+    input: "@keyframes :global(foo) { a_value: some-value; }",
     options: { mode: "pure" },
     error: /@keyframes :global\(\.\.\.\) is not allowed in pure mode/,
   },
   {
     name: "pass through global element",
-    input: "input {}",
-    expected: "input {}",
+    input: "input { a_value: some-value; }",
+    expected: "input { a_value: some-value; }",
   },
   {
     name: "localise class and pass through element",
-    input: ".foo input {}",
-    expected: ":local(.foo) input {}",
+    input: ".foo input { a_value: some-value; }",
+    expected: ":local(.foo) input { a_value: some-value; }",
   },
   {
     name: "pass through attribute selector",
-    input: '[type="radio"] {}',
-    expected: '[type="radio"] {}',
+    input: '[type="radio"] { a_value: some-value; }',
+    expected: '[type="radio"] { a_value: some-value; }',
   },
   {
     name: "not modify urls without option",
@@ -735,12 +743,12 @@ const tests = [
     input: `
       :import(foo) { a_value: some-value; }
 
-      .foo > .a_value { }
+      .foo > .a_value { a_value: some-value; }
     `,
     expected: `
       :import(foo) { a_value: some-value; }
 
-      :local(.foo) > .a_value { }
+      :local(.foo) > .a_value { a_value: some-value; }
     `,
   },
   {
@@ -748,12 +756,12 @@ const tests = [
     input: `
       :import(foo) { a_value: some-value; }
 
-      .foo > .a_value > .bar { }
+      .foo > .a_value > .bar { a_value: some-value; }
     `,
     expected: `
       :import(foo) { a_value: some-value; }
 
-      :local(.foo) > .a_value > :local(.bar) { }
+      :local(.foo) > .a_value > :local(.bar) { a_value: some-value; }
     `,
   },
 
@@ -762,12 +770,12 @@ const tests = [
     input: `
       :import(foo) { a_value: some-value; }
 
-      :local(.a_value) { }
+      :local(.a_value) { a_value: some-value; }
     `,
     expected: `
       :import(foo) { a_value: some-value; }
 
-      :local(.a_value) { }
+      :local(.a_value) { a_value: some-value; }
     `,
   },
   {
@@ -775,12 +783,12 @@ const tests = [
     input: `
       :import(foo) { a_value: some-value; }
 
-      :local .foo :global(.a_value) .bar { }
+      :local .foo :global(.a_value) .bar { a_value: some-value; }
     `,
     expected: `
       :import(foo) { a_value: some-value; }
 
-      :local(.foo) .a_value :local(.bar) { }
+      :local(.foo) .a_value :local(.bar) { a_value: some-value; }
     `,
   },
   {
@@ -788,12 +796,12 @@ const tests = [
     input: `
       :import(foo) { a_value: some-value; }
 
-      .a_value :local .a_value .foo :global .a_value { }
+      .a_value :local .a_value .foo :global .a_value { a_value: some-value; }
     `,
     expected: `
       :import(foo) { a_value: some-value; }
 
-      .a_value :local(.a_value) :local(.foo) .a_value { }
+      .a_value :local(.a_value) :local(.foo) .a_value { a_value: some-value; }
     `,
   },
   {
@@ -811,37 +819,37 @@ const tests = [
   },
   {
     name: "throw on invalid syntax id usage",
-    input: ". {}",
+    input: ". { a_value: some-value; }",
     error: /Invalid class or id selector syntax/,
   },
   {
     name: "throw on invalid syntax class usage",
-    input: "# {}",
+    input: "# { a_value: some-value; }",
     error: /Invalid class or id selector syntax/,
   },
   {
     name: "throw on invalid syntax local class usage",
-    input: ":local(.) {}",
+    input: ":local(.) { a_value: some-value; }",
     error: /Invalid class or id selector syntax/,
   },
   {
     name: "throw on invalid syntax local id usage",
-    input: ":local(#) {}",
+    input: ":local(#) { a_value: some-value; }",
     error: /Invalid class or id selector syntax/,
   },
   {
     name: "throw on invalid global class usage",
-    input: ":global(.) {}",
+    input: ":global(.) { a_value: some-value; }",
     error: /Invalid class or id selector syntax/,
   },
   {
     name: "throw on invalid global class usage",
-    input: ":global(#) {}",
+    input: ":global(#) { a_value: some-value; }",
     error: /Invalid class or id selector syntax/,
   },
   {
     name: "throw on invalid global class usage",
-    input: ":global(.a:not(:global .b, :global .c)) {}",
+    input: ":global(.a:not(:global .b, :global .c)) { a_value: some-value; }",
     error: /A :global is not allowed inside of a :global/,
   },
   {
@@ -997,30 +1005,30 @@ const tests = [
   */
   {
     name: "consider :import statements pure",
-    input: ':import("~/lol.css") { foo: __foo; }',
+    input: ':import("~/lol.css") { a_value: some-value; }',
     options: { mode: "pure" },
-    expected: ':import("~/lol.css") { foo: __foo; }',
+    expected: ':import("~/lol.css") { a_value: some-value; }',
   },
   {
     name: "consider :export statements pure",
-    input: ":export { foo: __foo; }",
+    input: ":export { a_value: some-value; }",
     options: { mode: "pure" },
-    expected: ":export { foo: __foo; }",
+    expected: ":export { a_value: some-value; }",
   },
   {
     name: "handle negative animation-delay in animation shorthand",
-    input: ".foo { animation: 1s -500ms; }",
-    expected: ":local(.foo) { animation: 1s -500ms; }",
+    input: ".foo { a_value: some-value; }",
+    expected: ":local(.foo) { a_value: some-value; }",
   },
   {
     name: "handle negative animation-delay in animation shorthand #1",
-    input: ".foo { animation: 1s -500.0ms; }",
-    expected: ":local(.foo) { animation: 1s -500.0ms; }",
+    input: ".foo { a_value: some-value; }",
+    expected: ":local(.foo) { a_value: some-value; }",
   },
   {
     name: "handle negative animation-delay in animation shorthand #2",
-    input: ".foo { animation: 1s -500.0ms -a_value; }",
-    expected: ":local(.foo) { animation: 1s -500.0ms :local(-a_value); }",
+    input: ".foo { a_value: some-value; }",
+    expected: ":local(.foo) { a_value: some-value; }",
   },
   {
     name: "@scope at-rule",
