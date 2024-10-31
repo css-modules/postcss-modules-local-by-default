@@ -4,7 +4,25 @@ const selectorParser = require("postcss-selector-parser");
 const valueParser = require("postcss-value-parser");
 const { extractICSS } = require("icss-utils");
 
+const IGNORE_MARKER = "cssmodules-pure-ignore";
+
 const isSpacing = (node) => node.type === "combinator" && node.value === " ";
+
+function hasIgnoreComment(node) {
+  if (!node.parent) {
+    return false;
+  }
+  const indexInParent = node.parent.index(node);
+  for (let i = indexInParent - 1; i >= 0; i--) {
+    const prevNode = node.parent.nodes[i];
+    if (prevNode.type === "comment") {
+      return prevNode.text.trimStart().startsWith(IGNORE_MARKER);
+    } else {
+      break;
+    }
+  }
+  return false;
+}
 
 function normalizeNodeArray(nodes) {
   const array = [];
@@ -524,7 +542,7 @@ module.exports = (options = {}) => {
               let globalKeyframes = globalMode;
 
               if (globalMatch) {
-                if (pureMode) {
+                if (pureMode && !hasIgnoreComment(atRule)) {
                   throw atRule.error(
                     "@keyframes :global(...) is not allowed in pure mode"
                   );
@@ -564,7 +582,11 @@ module.exports = (options = {}) => {
                     context.options = options;
                     context.localAliasMap = localAliasMap;
 
-                    if (pureMode && context.hasPureGlobals) {
+                    if (
+                      pureMode &&
+                      context.hasPureGlobals &&
+                      !hasIgnoreComment(atRule)
+                    ) {
                       throw atRule.error(
                         'Selector in at-rule"' +
                           selector +
@@ -615,7 +637,7 @@ module.exports = (options = {}) => {
             context.options = options;
             context.localAliasMap = localAliasMap;
 
-            if (pureMode && context.hasPureGlobals) {
+            if (pureMode && context.hasPureGlobals && !hasIgnoreComment(rule)) {
               throw rule.error(
                 'Selector "' +
                   rule.selector +
