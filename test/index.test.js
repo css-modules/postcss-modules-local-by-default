@@ -180,6 +180,21 @@ const tests = [
     expected: ":local(.foo) { animation-name: env(bar); }",
   },
   {
+    name: "not localize animation-name in an global function",
+    input: ".foo { animation-name: global(bar); }",
+    expected: ":local(.foo) { animation-name: bar; }",
+  },
+  {
+    name: "not localize animation in an global function",
+    input: ".foo { animation: global(bar); }",
+    expected: ":local(.foo) { animation: bar; }",
+  },
+  {
+    name: "not localize a certain animation in an global function",
+    input: ".foo { animation: global(bar), foo; }",
+    expected: ":local(.foo) { animation: bar, :local(foo); }",
+  },
+  {
     name: "not localize animation-name in an env function #2",
     input: ".foo { animation-name: eNv(bar); }",
     expected: ":local(.foo) { animation-name: eNv(bar); }",
