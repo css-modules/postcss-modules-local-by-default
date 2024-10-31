@@ -28,6 +28,21 @@ Transformation examples:
 ```
 <!-- prettier-ignore-end -->
 
+## Pure Mode
+
+In pure mode, all selectors must contain at least one local class or id
+selector
+
+To ignore this rule for a specific selector, add the following comment in front
+of the selector:
+
+```css
+/* cssmodules-pure-ignore */
+:global(#modal-backdrop) {
+  ...;
+}
+```
+
 ## Building
 
 ```bash
