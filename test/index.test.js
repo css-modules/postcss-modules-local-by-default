@@ -949,7 +949,15 @@ const tests = [
     options: { mode: "pure" },
     input: `/* cssmodules-pure-ignore */
             :global(.foo) { color: blue; }`,
-    expected: `/* cssmodules-pure-ignore */
+    expected: `.foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #2",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            /* another comment */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
             .foo { color: blue; }`,
   },
   {
@@ -957,8 +965,7 @@ const tests = [
     options: { mode: "pure" },
     input: `/* cssmodules-pure-ignore - needed for third party integration */
             :global(#foo) { color: blue; }`,
-    expected: `/* cssmodules-pure-ignore - needed for third party integration */
-            #foo { color: blue; }`,
+    expected: `#foo { color: blue; }`,
   },
   {
     name: "should not affect rules after the ignored block",
@@ -985,9 +992,7 @@ const tests = [
               /* cssmodules-pure-ignore */
               :global(.bar) { color: blue; }
             }`,
-    expected: `/* cssmodules-pure-ignore */
-            .foo {
-              /* cssmodules-pure-ignore */
+    expected: `.foo {
               .bar { color: blue; }
             }`,
   },
@@ -998,8 +1003,7 @@ const tests = [
             ::view-transition-group(modal) {
               animation-duration: 300ms;
             }`,
-    expected: `/* cssmodules-pure-ignore */
-            ::view-transition-group(modal) {
+    expected: `::view-transition-group(modal) {
               animation-duration: 300ms;
             }`,
   },
@@ -1011,8 +1015,7 @@ const tests = [
               from { opacity: 1; }
               to { opacity: 0; }
             }`,
-    expected: `/* cssmodules-pure-ignore */
-            @keyframes fadeOut {
+    expected: `@keyframes fadeOut {
               from { opacity: 1; }
               to { opacity: 0; }
             }`,
@@ -1025,7 +1028,6 @@ const tests = [
               :global(.foo) { color: blue; }
             }`,
     expected: `@media (min-width: 768px) {
-              /* cssmodules-pure-ignore */
               .foo { color: blue; }
             }`,
   },
@@ -1037,10 +1039,8 @@ const tests = [
             .local { color: green; }
             /* cssmodules-pure-ignore */
             :global(.bar) { color: red; }`,
-    expected: `/* cssmodules-pure-ignore */
-            .foo { color: blue; }
+    expected: `.foo { color: blue; }
             :local(.local) { color: green; }
-            /* cssmodules-pure-ignore */
             .bar { color: red; }`,
   },
   {
@@ -1050,8 +1050,7 @@ const tests = [
             :global(.foo):hover > :global(.bar) + :global(.baz) {
               color: blue;
             }`,
-    expected: `/* cssmodules-pure-ignore */
-            .foo:hover > .bar + .baz {
+    expected: `.foo:hover > .bar + .baz {
               color: blue;
             }`,
   },
@@ -1064,8 +1063,7 @@ const tests = [
             :global(.baz) {
               color: blue;
             }`,
-    expected: `/* cssmodules-pure-ignore */
-            .foo,
+    expected: `.foo,
             .bar,
             .baz {
               color: blue;
@@ -1079,8 +1077,7 @@ const tests = [
             :global(.foo)::after {
               content: '';
             }`,
-    expected: `/* cssmodules-pure-ignore */
-            .foo::before,
+    expected: `.foo::before,
             .foo::after {
               content: '';
             }`,
