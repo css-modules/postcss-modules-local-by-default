@@ -8,20 +8,18 @@ const IGNORE_MARKER = "cssmodules-pure-ignore";
 
 const isSpacing = (node) => node.type === "combinator" && node.value === " ";
 
-function hasIgnoreComment(node) {
-  if (!node.parent) {
-    return false;
-  }
-  const indexInParent = node.parent.index(node);
+function getIgnoreComment(node) {
+  const indexInParent = node.parent ? node.parent.index(node) : -1;
   for (let i = indexInParent - 1; i >= 0; i--) {
     const prevNode = node.parent.nodes[i];
     if (prevNode.type === "comment") {
-      return prevNode.text.trimStart().startsWith(IGNORE_MARKER);
+      if (prevNode.text.trimStart().startsWith(IGNORE_MARKER)) {
+        return prevNode;
+      }
     } else {
       break;
     }
   }
-  return false;
 }
 
 function normalizeNodeArray(nodes) {
@@ -521,6 +519,7 @@ module.exports = (options = {}) => {
           });
 
           root.walkAtRules((atRule) => {
+            const ignoreComment = getIgnoreComment(atRule);
             if (/keyframes$/i.test(atRule.name)) {
               const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(
                 atRule.params
@@ -532,7 +531,7 @@ module.exports = (options = {}) => {
               let globalKeyframes = globalMode;
 
               if (globalMatch) {
-                if (pureMode && !hasIgnoreComment(atRule)) {
+                if (pureMode && !ignoreComment) {
                   throw atRule.error(
                     "@keyframes :global(...) is not allowed in pure mode"
                   );
@@ -572,11 +571,7 @@ module.exports = (options = {}) => {
                     context.options = options;
                     context.localAliasMap = localAliasMap;
 
-                    if (
-                      pureMode &&
-                      context.hasPureGlobals &&
-                      !hasIgnoreComment(atRule)
-                    ) {
+                    if (pureMode && context.hasPureGlobals && ignoreComment) {
                       throw atRule.error(
                         'Selector in at-rule"' +
                           selector +
@@ -610,9 +605,14 @@ module.exports = (options = {}) => {
                 }
               });
             }
+
+            if (ignoreComment) {
+              ignoreComment.remove();
+            }
           });
 
           root.walkRules((rule) => {
+            const ignoreComment = getIgnoreComment(rule);
             if (
               rule.parent &&
               rule.parent.type === "atrule" &&
@@ -627,7 +627,7 @@ module.exports = (options = {}) => {
             context.options = options;
             context.localAliasMap = localAliasMap;
 
-            if (pureMode && context.hasPureGlobals && !hasIgnoreComment(rule)) {
+            if (pureMode && context.hasPureGlobals && !ignoreComment) {
               throw rule.error(
                 'Selector "' +
                   rule.selector +
@@ -643,6 +643,10 @@ module.exports = (options = {}) => {
               rule.nodes.forEach((declaration) =>
                 localizeDeclaration(declaration, context)
               );
+            }
+
+            if (ignoreComment) {
+              ignoreComment.remove();
             }
           });
         },
