@@ -328,17 +328,6 @@ function localizeDeclarationValues(localize, declaration, context) {
       return false;
     }
 
-    // replace `animation-name: global(example)` with `animation-name: example`
-    if (
-      node.type === "function" &&
-      node.value.toLowerCase() === "global" &&
-      /animation(-name)$/i.test(declaration.prop) &&
-      node.nodes.length === 1
-    ) {
-      Object.assign(node, node.nodes[0]);
-      return;
-    }
-
     if (
       node.type === "word" &&
       specialKeywords.includes(node.value.toLowerCase())
@@ -358,24 +347,20 @@ function localizeDeclarationValues(localize, declaration, context) {
   declaration.value = valueNodes.toString();
 }
 
-function localizeDeclaration(declaration, context) {
-  const isAnimation = /animation$/i.test(declaration.prop);
+// letter
+// An uppercase letter or a lowercase letter.
+//
+// ident-start code point
+// A letter, a non-ASCII code point, or U+005F LOW LINE (_).
+//
+// ident code point
+// An ident-start code point, a digit, or U+002D HYPHEN-MINUS (-).
 
-  if (isAnimation) {
-    // letter
-    // An uppercase letter or a lowercase letter.
-    //
-    // ident-start code point
-    // A letter, a non-ASCII code point, or U+005F LOW LINE (_).
-    //
-    // ident code point
-    // An ident-start code point, a digit, or U+002D HYPHEN-MINUS (-).
+// We don't validate `hex digits`, because we don't need it, it is work of linters.
+const validIdent =
+  /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-(?![0-9]))((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
 
-    // We don't validate `hex digits`, because we don't need it, it is work of linters.
-    const validIdent =
-      /^-?([a-z\u0080-\uFFFF_]|(\\[^\r\n\f])|-(?![0-9]))((\\[^\r\n\f])|[a-z\u0080-\uFFFF_0-9-])*$/i;
-
-    /*
+/*
     The spec defines some keywords that you can use to describe properties such as the timing
     function. These are still valid animation names, so as long as there is a property that accepts
     a keyword, it is given priority. Only when all the properties that can take a keyword are
@@ -386,38 +371,43 @@ function localizeDeclaration(declaration, context) {
     The animation will repeat an infinite number of times from the first argument, and will have an
     animation name of infinite from the second.
     */
-    const animationKeywords = {
-      // animation-direction
-      $normal: 1,
-      $reverse: 1,
-      $alternate: 1,
-      "$alternate-reverse": 1,
-      // animation-fill-mode
-      $forwards: 1,
-      $backwards: 1,
-      $both: 1,
-      // animation-iteration-count
-      $infinite: 1,
-      // animation-play-state
-      $paused: 1,
-      $running: 1,
-      // animation-timing-function
-      $ease: 1,
-      "$ease-in": 1,
-      "$ease-out": 1,
-      "$ease-in-out": 1,
-      $linear: 1,
-      "$step-end": 1,
-      "$step-start": 1,
-      // Special
-      $none: Infinity, // No matter how many times you write none, it will never be an animation name
-      // Global values
-      $initial: Infinity,
-      $inherit: Infinity,
-      $unset: Infinity,
-      $revert: Infinity,
-      "$revert-layer": Infinity,
-    };
+const animationKeywords = {
+  // animation-direction
+  $normal: 1,
+  $reverse: 1,
+  $alternate: 1,
+  "$alternate-reverse": 1,
+  // animation-fill-mode
+  $forwards: 1,
+  $backwards: 1,
+  $both: 1,
+  // animation-iteration-count
+  $infinite: 1,
+  // animation-play-state
+  $paused: 1,
+  $running: 1,
+  // animation-timing-function
+  $ease: 1,
+  "$ease-in": 1,
+  "$ease-out": 1,
+  "$ease-in-out": 1,
+  $linear: 1,
+  "$step-end": 1,
+  "$step-start": 1,
+  // Special
+  $none: Infinity, // No matter how many times you write none, it will never be an animation name
+  // Global values
+  $initial: Infinity,
+  $inherit: Infinity,
+  $unset: Infinity,
+  $revert: Infinity,
+  "$revert-layer": Infinity,
+};
+
+function localizeDeclaration(declaration, context) {
+  const isAnimation = /animation(-name)?$/i.test(declaration.prop);
+
+  if (isAnimation) {
     let parsedAnimationKeywords = {};
     const valueNodes = valueParser(declaration.value).walk((node) => {
       // If div-token appeared (represents as comma ','), a possibility of an animation-keywords should be reflesh.
@@ -425,12 +415,27 @@ function localizeDeclaration(declaration, context) {
         parsedAnimationKeywords = {};
 
         return;
+      } else if (
+        node.type === "function" &&
+        node.value.toLowerCase() === "local" &&
+        node.nodes.length === 1
+      ) {
+        node.type = "word";
+        node.value = node.nodes[0].value;
+
+        return localizeDeclNode(node, {
+          options: context.options,
+          global: context.global,
+          localizeNextItem: true,
+          localAliasMap: context.localAliasMap,
+        });
       } else if (node.type === "function") {
         // replace `animation: global(example)` with `animation-name: example`
         if (node.value.toLowerCase() === "global" && node.nodes.length === 1) {
-          Object.assign(node, node.nodes[0]);
-          return false;
+          node.type = "word";
+          node.value = node.nodes[0].value;
         }
+
         // Do not handle nested functions
         return false;
       }
@@ -458,14 +463,12 @@ function localizeDeclaration(declaration, context) {
         }
       }
 
-      const subContext = {
+      return localizeDeclNode(node, {
         options: context.options,
         global: context.global,
         localizeNextItem: shouldParseAnimationName && !context.global,
         localAliasMap: context.localAliasMap,
-      };
-
-      return localizeDeclNode(node, subContext);
+      });
     });
 
     declaration.value = valueNodes.toString();
@@ -473,15 +476,7 @@ function localizeDeclaration(declaration, context) {
     return;
   }
 
-  const isAnimationName = /animation(-name)?$/i.test(declaration.prop);
-
-  if (isAnimationName) {
-    return localizeDeclarationValues(true, declaration, context);
-  }
-
-  const hasUrl = /url\(/i.test(declaration.value);
-
-  if (hasUrl) {
+  if (/url\(/i.test(declaration.value)) {
     return localizeDeclarationValues(false, declaration, context);
   }
 }
