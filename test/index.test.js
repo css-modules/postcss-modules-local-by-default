@@ -165,6 +165,11 @@ const tests = [
     expected: ":local(.foo) { animation-name: :local(bar); }",
   },
   {
+    name: "localize a single animation-name #2",
+    input: ".foo { animation-name: local(bar); }",
+    expected: ":local(.foo) { animation-name: :local(bar); }",
+  },
+  {
     name: "not localize animation-name in a var function",
     input: ".foo { animation-name: var(--bar); }",
     expected: ":local(.foo) { animation-name: var(--bar); }",
@@ -178,6 +183,63 @@ const tests = [
     name: "not localize animation-name in an env function",
     input: ".foo { animation-name: env(bar); }",
     expected: ":local(.foo) { animation-name: env(bar); }",
+  },
+  {
+    name: "not localize animation-name in an global function",
+    input: ".foo { animation-name: global(bar); }",
+    expected: ":local(.foo) { animation-name: bar; }",
+  },
+  {
+    name: "localize and not localize animation-name in mixed case",
+    input:
+      ".foo { animation-name: fadeInOut, global(moveLeft300px), local(bounce); }",
+    expected:
+      ":local(.foo) { animation-name: :local(fadeInOut), moveLeft300px, :local(bounce); }",
+  },
+  {
+    name: "localize and not localize animation-name in mixed case #2",
+    options: { mode: "global" },
+    input:
+      ".foo { animation-name: fadeInOut, global(moveLeft300px), local(bounce); }",
+    expected:
+      ".foo { animation-name: fadeInOut, moveLeft300px, :local(bounce); }",
+  },
+  {
+    name: "localize and not localize animation-name in mixed case #3",
+    options: { mode: "pure" },
+    input:
+      ".foo { animation-name: fadeInOut, global(moveLeft300px), local(bounce); }",
+    expected:
+      ":local(.foo) { animation-name: :local(fadeInOut), moveLeft300px, :local(bounce); }",
+  },
+  {
+    name: "not localize animation in an global function",
+    input: ".foo { animation: global(bar); }",
+    expected: ":local(.foo) { animation: bar; }",
+  },
+  {
+    name: "not localize a certain animation in an global function",
+    input: ".foo { animation: global(bar), foo; }",
+    expected: ":local(.foo) { animation: bar, :local(foo); }",
+  },
+  {
+    name: "localize and not localize a certain animation in mixed case",
+    input: ".foo { animation: rotate 1s, global(spin) 3s, local(fly) 6s; }",
+    expected:
+      ":local(.foo) { animation: :local(rotate) 1s, spin 3s, :local(fly) 6s; }",
+  },
+  {
+    name: "localize and not localize a certain animation in mixed case #2",
+    options: { mode: "global" },
+    input: ".foo { animation: rotate 1s, global(spin) 3s, local(fly) 6s; }",
+    expected: ".foo { animation: rotate 1s, spin 3s, :local(fly) 6s; }",
+  },
+  {
+    name: "localize and not localize a certain animation in mixed case #2",
+    options: { mode: "pure" },
+    input: ".foo { animation: rotate 1s, global(spin) 3s, local(fly) 6s; }",
+    expected:
+      ":local(.foo) { animation: :local(rotate) 1s, spin 3s, :local(fly) 6s; }",
   },
   {
     name: "not localize animation-name in an env function #2",

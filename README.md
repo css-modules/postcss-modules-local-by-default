@@ -4,6 +4,8 @@
 
 Transformation examples:
 
+Selectors (mode `local`, by default)::
+
 <!-- prettier-ignore-start -->
 ```css
 .foo { ... } /* => */ :local(.foo) { ... }
@@ -25,6 +27,30 @@ Transformation examples:
 .foo :global(.bar) .baz { ... } /* => */ :local(.foo) .bar :local(.baz) { ... }
 
 .foo:global(.bar) .baz { ... } /* => */ :local(.foo).bar :local(.baz) { ... }
+```
+<!-- prettier-ignore-end -->
+
+Declarations (mode `local`, by default):
+
+<!-- prettier-ignore-start -->
+```css
+.foo {
+  animation-name: fadeInOut, global(moveLeft300px), local(bounce);
+}
+
+.bar {
+  animation: rotate 1s, global(spin) 3s, local(fly) 6s;
+}
+
+/* => */ 
+
+:local(.foo) {
+  animation-name: :local(fadeInOut), moveLeft300px, :local(bounce);
+}
+
+:local(.bar) {
+  animation: :local(rotate) 1s, spin 3s, :local(fly) 6s;
+}
 ```
 <!-- prettier-ignore-end -->
 
