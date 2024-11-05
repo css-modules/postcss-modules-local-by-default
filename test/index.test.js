@@ -945,6 +945,234 @@ const tests = [
     error: /is not pure/,
   },
   {
+    name: "should suppress errors for global selectors after ignore comment",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }`,
+    expected: `.foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #2",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            /* another comment */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #3",
+    options: { mode: "pure" },
+    input: `/* another comment */
+            /* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #4",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */ /* another comment */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #5",
+    options: { mode: "pure" },
+    input: `/* another comment */ /* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #6",
+    options: { mode: "pure" },
+    input: `.foo { /* cssmodules-pure-ignore */ :global(.bar) { color: blue }; }`,
+    expected: `:local(.foo) { .bar { color: blue }; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #7",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */ :global(.foo) { /* cssmodules-pure-ignore */ :global(.bar) { color: blue } }`,
+    expected: `.foo { .bar { color: blue } }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #8",
+    options: { mode: "pure" },
+    input: `/*     cssmodules-pure-ignore     */ :global(.foo) { color: blue; }`,
+    expected: `.foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #9",
+    options: { mode: "pure" },
+    input: `/*
+    cssmodules-pure-ignore
+    */ :global(.foo) { color: blue; }`,
+    expected: `.foo { color: blue; }`,
+  },
+  {
+    name: "should allow additional text in ignore comment",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore - needed for third party integration */
+            :global(#foo) { color: blue; }`,
+    expected: `#foo { color: blue; }`,
+  },
+  {
+    name: "should not affect rules after the ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }
+            :global(.bar) { color: red; }`,
+    error: /is not pure/,
+  },
+  {
+    name: "should work with nested global selectors in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo) {
+              :global(.bar) { color: blue; }
+            }`,
+    error: /is not pure/,
+  },
+  {
+    name: "should work with ignored nested global selectors in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo) {
+              /* cssmodules-pure-ignore */
+              :global(.bar) { color: blue; }
+            }`,
+    expected: `.foo {
+              .bar { color: blue; }
+            }`,
+  },
+  {
+    name: "should work with view transitions in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            ::view-transition-group(modal) {
+              animation-duration: 300ms;
+            }`,
+    expected: `::view-transition-group(modal) {
+              animation-duration: 300ms;
+            }`,
+  },
+  {
+    name: "should work with keyframes in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            @keyframes :global(fadeOut) {
+              from { opacity: 1; }
+              to { opacity: 0; }
+            }`,
+    expected: `@keyframes fadeOut {
+              from { opacity: 1; }
+              to { opacity: 0; }
+            }`,
+  },
+  {
+    name: "should work with scope in ignored block",
+    options: { mode: "pure" },
+    input: `
+/* cssmodules-pure-ignore */
+@scope (:global(.foo)) to (:global(.bar)) {
+  .article-footer {
+    border: 5px solid black;
+  }
+}
+`,
+    expected: `
+@scope (.foo) to (.bar) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+}
+`,
+  },
+  {
+    name: "should work with scope in ignored block #2",
+    options: { mode: "pure" },
+    input: `
+/* cssmodules-pure-ignore */
+@scope (:global(.foo))
+ to (:global(.bar)) {
+  .article-footer {
+    border: 5px solid black;
+  }
+}
+`,
+    expected: `
+@scope (.foo) to (.bar) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+}
+`,
+  },
+  {
+    name: "should work in media queries",
+    options: { mode: "pure" },
+    input: `@media (min-width: 768px) {
+              /* cssmodules-pure-ignore */
+              :global(.foo) { color: blue; }
+            }`,
+    expected: `@media (min-width: 768px) {
+              .foo { color: blue; }
+            }`,
+  },
+  {
+    name: "should handle multiple ignore comments",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }
+            .local { color: green; }
+            /* cssmodules-pure-ignore */
+            :global(.bar) { color: red; }`,
+    expected: `.foo { color: blue; }
+            :local(.local) { color: green; }
+            .bar { color: red; }`,
+  },
+  {
+    name: "should work with complex selectors in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo):hover > :global(.bar) + :global(.baz) {
+              color: blue;
+            }`,
+    expected: `.foo:hover > .bar + .baz {
+              color: blue;
+            }`,
+  },
+  {
+    name: "should work with multiple selectors in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo),
+            :global(.bar),
+            :global(.baz) {
+              color: blue;
+            }`,
+    expected: `.foo,
+            .bar,
+            .baz {
+              color: blue;
+            }`,
+  },
+  {
+    name: "should work with pseudo-elements in ignored block",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */
+            :global(.foo)::before,
+            :global(.foo)::after {
+              content: '';
+            }`,
+    expected: `.foo::before,
+            .foo::after {
+              content: '';
+            }`,
+  },
+  {
     name: "css nesting",
     input: `
 .foo {
