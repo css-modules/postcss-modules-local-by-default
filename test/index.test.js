@@ -961,6 +961,57 @@ const tests = [
             .foo { color: blue; }`,
   },
   {
+    name: "should suppress errors for global selectors after ignore comment #3",
+    options: { mode: "pure" },
+    input: `/* another comment */
+            /* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #4",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */ /* another comment */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #5",
+    options: { mode: "pure" },
+    input: `/* another comment */ /* cssmodules-pure-ignore */
+            :global(.foo) { color: blue; }`,
+    expected: `/* another comment */
+            .foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #6",
+    options: { mode: "pure" },
+    input: `.foo { /* cssmodules-pure-ignore */ :global(.bar) { color: blue }; }`,
+    expected: `:local(.foo) { .bar { color: blue }; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #7",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-ignore */ :global(.foo) { /* cssmodules-pure-ignore */ :global(.bar) { color: blue } }`,
+    expected: `.foo { .bar { color: blue } }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #8",
+    options: { mode: "pure" },
+    input: `/*     cssmodules-pure-ignore     */ :global(.foo) { color: blue; }`,
+    expected: `.foo { color: blue; }`,
+  },
+  {
+    name: "should suppress errors for global selectors after ignore comment #9",
+    options: { mode: "pure" },
+    input: `/*
+    cssmodules-pure-ignore
+    */ :global(.foo) { color: blue; }`,
+    expected: `.foo { color: blue; }`,
+  },
+  {
     name: "should allow additional text in ignore comment",
     options: { mode: "pure" },
     input: `/* cssmodules-pure-ignore - needed for third party integration */
@@ -1019,6 +1070,45 @@ const tests = [
               from { opacity: 1; }
               to { opacity: 0; }
             }`,
+  },
+  {
+    name: "should work with scope in ignored block",
+    options: { mode: "pure" },
+    input: `
+/* cssmodules-pure-ignore */
+@scope (:global(.foo)) to (:global(.bar)) {
+  .article-footer {
+    border: 5px solid black;
+  }
+}
+`,
+    expected: `
+@scope (.foo) to (.bar) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+}
+`,
+  },
+  {
+    name: "should work with scope in ignored block #2",
+    options: { mode: "pure" },
+    input: `
+/* cssmodules-pure-ignore */
+@scope (:global(.foo))
+ to (:global(.bar)) {
+  .article-footer {
+    border: 5px solid black;
+  }
+}
+`,
+    expected: `
+@scope (.foo) to (.bar) {
+  :local(.article-footer) {
+    border: 5px solid black;
+  }
+}
+`,
   },
   {
     name: "should work in media queries",

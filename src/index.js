@@ -9,7 +9,12 @@ const IGNORE_MARKER = "cssmodules-pure-ignore";
 const isSpacing = (node) => node.type === "combinator" && node.value === " ";
 
 function getIgnoreComment(node) {
-  const indexInParent = node.parent ? node.parent.index(node) : -1;
+  if (!node.parent) {
+    return;
+  }
+
+  const indexInParent = node.parent.index(node);
+
   for (let i = indexInParent - 1; i >= 0; i--) {
     const prevNode = node.parent.nodes[i];
     if (prevNode.type === "comment") {
@@ -529,7 +534,6 @@ module.exports = (options = {}) => {
           });
 
           root.walkAtRules((atRule) => {
-            const ignoreComment = getIgnoreComment(atRule);
             if (/keyframes$/i.test(atRule.name)) {
               const globalMatch = /^\s*:global\s*\((.+)\)\s*$/.exec(
                 atRule.params
@@ -541,11 +545,18 @@ module.exports = (options = {}) => {
               let globalKeyframes = globalMode;
 
               if (globalMatch) {
-                if (pureMode && !ignoreComment) {
-                  throw atRule.error(
-                    "@keyframes :global(...) is not allowed in pure mode"
-                  );
+                if (pureMode) {
+                  const ignoreComment = getIgnoreComment(atRule);
+
+                  if (!ignoreComment) {
+                    throw atRule.error(
+                      "@keyframes :global(...) is not allowed in pure mode"
+                    );
+                  } else {
+                    ignoreComment.remove();
+                  }
                 }
+
                 atRule.params = globalMatch[1];
                 globalKeyframes = true;
               } else if (localMatch) {
@@ -568,6 +579,14 @@ module.exports = (options = {}) => {
               });
             } else if (/scope$/i.test(atRule.name)) {
               if (atRule.params) {
+                const ignoreComment = pureMode
+                  ? getIgnoreComment(atRule)
+                  : undefined;
+
+                if (ignoreComment) {
+                  ignoreComment.remove();
+                }
+
                 atRule.params = atRule.params
                   .split("to")
                   .map((item) => {
@@ -581,7 +600,7 @@ module.exports = (options = {}) => {
                     context.options = options;
                     context.localAliasMap = localAliasMap;
 
-                    if (pureMode && context.hasPureGlobals && ignoreComment) {
+                    if (pureMode && context.hasPureGlobals && !ignoreComment) {
                       throw atRule.error(
                         'Selector in at-rule"' +
                           selector +
@@ -615,14 +634,9 @@ module.exports = (options = {}) => {
                 }
               });
             }
-
-            if (ignoreComment) {
-              ignoreComment.remove();
-            }
           });
 
           root.walkRules((rule) => {
-            const ignoreComment = getIgnoreComment(rule);
             if (
               rule.parent &&
               rule.parent.type === "atrule" &&
@@ -637,6 +651,8 @@ module.exports = (options = {}) => {
             context.options = options;
             context.localAliasMap = localAliasMap;
 
+            const ignoreComment = pureMode ? getIgnoreComment(rule) : undefined;
+
             if (pureMode && context.hasPureGlobals && !ignoreComment) {
               throw rule.error(
                 'Selector "' +
@@ -644,6 +660,8 @@ module.exports = (options = {}) => {
                   '" is not pure ' +
                   "(pure selectors must contain at least one local class or id)"
               );
+            } else if (ignoreComment) {
+              ignoreComment.remove();
             }
 
             rule.selector = context.selector;
@@ -653,10 +671,6 @@ module.exports = (options = {}) => {
               rule.nodes.forEach((declaration) =>
                 localizeDeclaration(declaration, context)
               );
-            }
-
-            if (ignoreComment) {
-              ignoreComment.remove();
             }
           });
         },
