@@ -46,6 +46,8 @@ function normalizeNodeArray(nodes) {
   return array;
 }
 
+const isPureSelectorSymbol = Symbol("is-pure-selector");
+
 function localizeNode(rule, mode, localAliasMap) {
   const transform = (node, context) => {
     if (context.ignoreNextSpacing && !isSpacing(node)) {
@@ -253,7 +255,7 @@ function localizeNode(rule, mode, localAliasMap) {
       }
       case "nesting": {
         if (node.value === "&") {
-          context.hasLocals = true;
+          context.hasLocals = rule.parent[isPureSelectorSymbol];
         }
       }
     }
@@ -502,6 +504,30 @@ function localizeDeclaration(declaration, context) {
   }
 }
 
+const isPureSelector = (context, rule) => {
+  if (!rule.parent || rule.type === "root") {
+    return !context.hasPureGlobals;
+  }
+
+  if (rule.type === "rule" && rule[isPureSelectorSymbol]) {
+    return rule[isPureSelectorSymbol] || isPureSelector(context, rule.parent);
+  }
+
+  return !context.hasPureGlobals || isPureSelector(context, rule.parent);
+};
+
+const isNodeWithoutDeclarations = (rule) => {
+  if (rule.nodes.length > 0) {
+    return !rule.nodes.every(
+      (item) =>
+        item.type === "rule" ||
+        (item.type === "atrule" && !isNodeWithoutDeclarations(item))
+    );
+  }
+
+  return true;
+};
+
 module.exports = (options = {}) => {
   if (
     options &&
@@ -652,8 +678,13 @@ module.exports = (options = {}) => {
             context.localAliasMap = localAliasMap;
 
             const ignoreComment = pureMode ? getIgnoreComment(rule) : undefined;
+            const isNotPure = pureMode && !isPureSelector(context, rule);
 
-            if (pureMode && context.hasPureGlobals && !ignoreComment) {
+            if (
+              isNotPure &&
+              isNodeWithoutDeclarations(rule) &&
+              !ignoreComment
+            ) {
               throw rule.error(
                 'Selector "' +
                   rule.selector +
@@ -662,6 +693,10 @@ module.exports = (options = {}) => {
               );
             } else if (ignoreComment) {
               ignoreComment.remove();
+            }
+
+            if (pureMode) {
+              rule[isPureSelectorSymbol] = !isNotPure;
             }
 
             rule.selector = context.selector;

@@ -921,6 +921,14 @@ const tests = [
     expected: ":local(.foo) { &:hover { a_value: some-value; } }",
   },
   {
+    name: "consider & statements as pure #2",
+    input:
+      ".foo { @media screen and (min-width: 900px) { &:hover { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      ":local(.foo) { @media screen and (min-width: 900px) { &:hover { a_value: some-value; } } }",
+  },
+  {
     name: "consider global inside local as pure",
     input: ".foo button { a_value: some-value; }",
     options: { mode: "pure" },
@@ -1290,6 +1298,359 @@ const tests = [
     }
   }
 }`,
+  },
+  {
+    name: "css nesting #3",
+    input: ".foo { span { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { span { a_value: some-value; } }",
+  },
+  {
+    name: "css nesting (unfolded) #3",
+    input: ".foo span { a_value: some-value }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) span { a_value: some-value }",
+  },
+  {
+    name: "css nesting #4",
+    input: ".foo { span { a { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { span { a { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting (unfolded) #4",
+    input: ".foo span a { a_value: some-value }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) span a { a_value: some-value }",
+  },
+  {
+    name: "css nesting #5",
+    input: "html { .foo { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: "html { :local(.foo) { a_value: some-value; } }",
+  },
+  {
+    name: "css nesting (unfolded) #5",
+    input: "html .foo { a_value: some-value }",
+    options: { mode: "pure" },
+    expected: "html :local(.foo) { a_value: some-value }",
+  },
+  {
+    name: "css nesting #6",
+    input:
+      "html { @media screen and (min-width: 900px) { .foo { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { @media screen and (min-width: 900px) { :local(.foo) { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting (unfolded) #6",
+    input:
+      "@media screen and (min-width: 900px) { html .foo { a_value: some-value } }",
+    options: { mode: "pure" },
+    expected:
+      "@media screen and (min-width: 900px) { html :local(.foo) { a_value: some-value } }",
+  },
+  {
+    name: "css nesting #7",
+    input:
+      "html { .foo { a_value: some-value; } .bar { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected:
+      "html { :local(.foo) { a_value: some-value; } :local(.bar) { a_value: some-value; } }",
+  },
+  {
+    name: "css nesting (unfolded) #7",
+    input: "html .foo, html .bar { a_value: some-value }",
+    options: { mode: "pure" },
+    expected: "html :local(.foo), html :local(.bar) { a_value: some-value }",
+  },
+  {
+    name: "css nesting #8",
+    input:
+      ".class { @media screen and (min-width: 900px) { & > span { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      ":local(.class) { @media screen and (min-width: 900px) { & > span { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting (unfolded) #8",
+    input:
+      "@media screen and (min-width: 900px) { .class > span { a_value: some-value } }",
+    options: { mode: "pure" },
+    expected:
+      "@media screen and (min-width: 900px) { :local(.class) > span { a_value: some-value } }",
+  },
+  {
+    name: "css nesting #9",
+    input:
+      "html { @media screen and (min-width: 900px) { & > .class { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { @media screen and (min-width: 900px) { & > :local(.class) { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting (unfolded) #9",
+    input:
+      "@media screen and (min-width: 900px) { html > .class { a_value: some-value } }",
+    options: { mode: "pure" },
+    expected:
+      "@media screen and (min-width: 900px) { html > :local(.class) { a_value: some-value } }",
+  },
+  {
+    name: "css nesting #10",
+    input:
+      ".class { @media screen and (min-width: 900px) { & { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      ":local(.class) { @media screen and (min-width: 900px) { & { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting (unfolded) #10",
+    input:
+      "@media screen and (min-width: 900px) { .class { a_value: some-value } }",
+    options: { mode: "pure" },
+    expected:
+      "@media screen and (min-width: 900px) { :local(.class) { a_value: some-value } }",
+  },
+  {
+    name: "css nesting #11",
+    input: "html { .foo { span { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected: "html { :local(.foo) { span { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting (unfolded) #11",
+    input: "html .foo span { a_value: some-value }",
+    options: { mode: "pure" },
+    expected: "html :local(.foo) span { a_value: some-value }",
+  },
+  {
+    name: "css nesting #12",
+    input: "html { button { .foo { div { span { a_value: some-value; } } } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { button { :local(.foo) { div { span { a_value: some-value; } } } } }",
+  },
+  {
+    name: "css nesting #13",
+    input: ".foo { button { div { div { span { a_value: some-value; } } } } }",
+    options: { mode: "pure" },
+    expected:
+      ":local(.foo) { button { div { div { span { a_value: some-value; } } } } }",
+  },
+  {
+    name: "css nesting #14",
+    input: "html { button { div { div { .foo { a_value: some-value; } } } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { button { div { div { :local(.foo) { a_value: some-value; } } } } }",
+  },
+  {
+    name: "css nesting #15",
+    input:
+      "html { button { @media screen and (min-width: 900px) { .foo { div { span { a_value: some-value; } } } } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { button { @media screen and (min-width: 900px) { :local(.foo) { div { span { a_value: some-value; } } } } } }",
+  },
+  {
+    name: "css nesting #16",
+    input: "html { .foo { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: "html { :local(.foo) { a_value: some-value; } }",
+  },
+  {
+    name: "css nesting #17",
+    input: ".foo { div { a_value: some-value; } }",
+    options: { mode: "pure" },
+    expected: ":local(.foo) { div { a_value: some-value; } }",
+  },
+  {
+    name: "css nesting #18",
+    input:
+      "@media screen and (min-width: 900px) { html { .foo { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      "@media screen and (min-width: 900px) { html { :local(.foo) { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting #19",
+    input:
+      "html { @media screen and (min-width: 900px) { .foo { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { @media screen and (min-width: 900px) { :local(.foo) { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting #20",
+    input:
+      "html { .foo { @media screen and (min-width: 900px) { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      "html { :local(.foo) { @media screen and (min-width: 900px) { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting #21",
+    input:
+      "@media screen and (min-width: 900px) { .foo { div { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      "@media screen and (min-width: 900px) { :local(.foo) { div { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting #22",
+    input:
+      ".foo { @media screen and (min-width: 900px) { div { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      ":local(.foo) { @media screen and (min-width: 900px) { div { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting #23",
+    input:
+      ".foo { div { @media screen and (min-width: 900px) { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    expected:
+      ":local(.foo) { div { @media screen and (min-width: 900px) { a_value: some-value; } } }",
+  },
+  {
+    name: "css nesting - throw on mixed parents",
+    input: ".foo, html { span { a_value: some-value; } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on &",
+    input: "html { & > span { a_value: some-value; } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on & #2",
+    input: "html { button { & > span { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on & #3",
+    input:
+      "html { @media screen and (min-width: 900px) { & > span { a_value: some-value; } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on & #4",
+    input: "html { button { div { div { & { a_value: some-value; } } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw",
+    input: "html { button { div { div { div { a_value: some-value; } } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #2",
+    input: "html { button { div { div { div { } } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #3",
+    input:
+      "html { button { @media screen and (min-width: 900px) { div { div { div { } } } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #4",
+    input:
+      "@media screen and (min-width: 900px) { html { button { div { div { div { } } } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #5",
+    input:
+      "html { div { @media screen and (min-width: 900px) { color: red } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #6",
+    input:
+      "html { div { @media screen and (min-width: 900px) { @media screen and (min-width: 900px) { color: red } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #7",
+    input:
+      "html { div { @media screen and (min-width: 900px) { .a { } @media screen and (min-width: 900px) { color: red } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #7",
+    input:
+      "html { div { @media screen and (min-width: 900px) { .a { a_value: some-value; } @media screen and (min-width: 900px) { color: red } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #8",
+    input: `
+@media screen and (min-width: 900px) {
+  .a { a_value: some-value; }
+  @media screen and (min-width: 900px) {
+    div {
+      color: red
+    }
+  }
+}`,
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on global styles with a local selector",
+    input: `html { a_value: some-value; .foo { a_value: some-value; } }`,
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on global styles with a local selector #2",
+    input: `html { .foo { a_value: some-value; } a_value: some-value; }`,
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on global styles with a local selector #3",
+    input: `
+html {
+  .foo { a_value: some-value; }
+  button {
+    color: red;
+    .bar { a_value: some-value; }
+  }
+}`,
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw on global styles with a local selector #4",
+    input: `
+html {
+ @media screen and (min-width: 900px) {
+   button {
+     color: red;
+     .bar { a_value: some-value; }
+   }
+ }
+}`,
+    options: { mode: "pure" },
+    error: /is not pure/,
   },
   /*
   Bug in postcss-selector-parser
