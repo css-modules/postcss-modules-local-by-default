@@ -1574,7 +1574,42 @@ const tests = [
   {
     name: "css nesting - throw #5",
     input:
-      "html { button { div { div { div { @media screen and (min-width: 900px) { color: red } } } } } }",
+      "html { div { @media screen and (min-width: 900px) { color: red } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #6",
+    input:
+      "html { div { @media screen and (min-width: 900px) { @media screen and (min-width: 900px) { color: red } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #7",
+    input:
+      "html { div { @media screen and (min-width: 900px) { .a { } @media screen and (min-width: 900px) { color: red } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #7",
+    input:
+      "html { div { @media screen and (min-width: 900px) { .a { a_value: some-value; } @media screen and (min-width: 900px) { color: red } } } }",
+    options: { mode: "pure" },
+    error: /is not pure/,
+  },
+  {
+    name: "css nesting - throw #8",
+    input: `
+@media screen and (min-width: 900px) {
+  .a { a_value: some-value; }
+  @media screen and (min-width: 900px) {
+    div {
+      color: red
+    }
+  }
+}`,
     options: { mode: "pure" },
     error: /is not pure/,
   },

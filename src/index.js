@@ -516,6 +516,18 @@ const isPureSelector = (context, rule) => {
   return !context.hasPureGlobals || isPureSelector(context, rule.parent);
 };
 
+const isNodeWithoutDeclarations = (rule) => {
+  if (rule.nodes.length > 0) {
+    return !rule.nodes.every(
+      (item) =>
+        item.type === "rule" ||
+        (item.type === "atrule" && !isNodeWithoutDeclarations(item))
+    );
+  }
+
+  return true;
+};
+
 module.exports = (options = {}) => {
   if (
     options &&
@@ -670,12 +682,8 @@ module.exports = (options = {}) => {
 
             if (
               isNotPure &&
-              !ignoreComment &&
-              (rule.nodes.length > 0
-                ? !rule.nodes.every(
-                    (item) => item.type === "rule" || item.type === "atrule"
-                  )
-                : true)
+              isNodeWithoutDeclarations(rule) &&
+              !ignoreComment
             ) {
               throw rule.error(
                 'Selector "' +
