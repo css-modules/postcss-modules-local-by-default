@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - feat: add `global()` and `local()` for animations
 - feat: add pure ignore comment
-- fix: css nesting and pure mod
+- fix: css nesting and pure mode
 
 ## [4.0.5](https://github.com/postcss-modules-local-by-default/compare/v4.0.4...v4.0.5) - 2024-04-03
 

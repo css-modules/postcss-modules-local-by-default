@@ -99,8 +99,8 @@ MIT
 
 Mark Dalgleish, 2015.
 
-[ci-img]: https://img.shields.io/travis/css-modules/postcss-modules-local-by-default/master.svg?style=flat-square
-[ci]: https://travis-ci.org/css-modules/postcss-modules-local-by-default
+[ci-img]: https://github.com/css-modules/postcss-modules-local-by-default/actions/workflows/nodejs.yml/badge.svg
+[ci]: https://github.com/css-modules/postcss-modules-local-by-default/actions/workflows/nodejs.yml
 [npm-img]: https://img.shields.io/npm/v/postcss-modules-local-by-default.svg?style=flat-square
 [npm]: https://www.npmjs.com/package/postcss-modules-local-by-default
 [coveralls-img]: https://img.shields.io/coveralls/css-modules/postcss-modules-local-by-default/master.svg?style=flat-square
