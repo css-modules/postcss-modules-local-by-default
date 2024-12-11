@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [4.2.0](https://github.com/postcss-modules-local-by-default/compare/v4.1.1...v4.2.0) - 2024-12-11
+
+- feat: add support a `/* cssmodules-pure-no-check */` comment
+
 ## [4.1.0](https://github.com/postcss-modules-local-by-default/compare/v4.0.5...v4.1.1) - 2024-11-11
 
 - feat: add `global()` and `local()` for animations
