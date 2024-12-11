@@ -4,21 +4,32 @@ const selectorParser = require("postcss-selector-parser");
 const valueParser = require("postcss-value-parser");
 const { extractICSS } = require("icss-utils");
 
-const IGNORE_MARKER = "cssmodules-pure-ignore";
+const IGNORE_FILE_MARKER = "cssmodules-pure-no-check";
+const IGNORE_NEXT_LINE_MARKER = "cssmodules-pure-ignore";
 
 const isSpacing = (node) => node.type === "combinator" && node.value === " ";
+
+const isPureCheckDisabled = (root) => {
+  for (const node of root.nodes) {
+    if (node.type !== "comment") {
+      return false;
+    }
+    if (node.text.trim().startsWith(IGNORE_FILE_MARKER)) {
+      return true;
+    }
+  }
+  return false;
+};
 
 function getIgnoreComment(node) {
   if (!node.parent) {
     return;
   }
-
   const indexInParent = node.parent.index(node);
-
   for (let i = indexInParent - 1; i >= 0; i--) {
     const prevNode = node.parent.nodes[i];
     if (prevNode.type === "comment") {
-      if (prevNode.text.trimStart().startsWith(IGNORE_MARKER)) {
+      if (prevNode.text.trimStart().startsWith(IGNORE_NEXT_LINE_MARKER)) {
         return prevNode;
       }
     } else {
@@ -552,6 +563,7 @@ module.exports = (options = {}) => {
       return {
         Once(root) {
           const { icssImports } = extractICSS(root, false);
+          const enforcePureMode = pureMode && !isPureCheckDisabled(root);
 
           Object.keys(icssImports).forEach((key) => {
             Object.keys(icssImports[key]).forEach((prop) => {
@@ -571,9 +583,8 @@ module.exports = (options = {}) => {
               let globalKeyframes = globalMode;
 
               if (globalMatch) {
-                if (pureMode) {
+                if (enforcePureMode) {
                   const ignoreComment = getIgnoreComment(atRule);
-
                   if (!ignoreComment) {
                     throw atRule.error(
                       "@keyframes :global(...) is not allowed in pure mode"
@@ -582,7 +593,6 @@ module.exports = (options = {}) => {
                     ignoreComment.remove();
                   }
                 }
-
                 atRule.params = globalMatch[1];
                 globalKeyframes = true;
               } else if (localMatch) {
@@ -626,7 +636,11 @@ module.exports = (options = {}) => {
                     context.options = options;
                     context.localAliasMap = localAliasMap;
 
-                    if (pureMode && context.hasPureGlobals && !ignoreComment) {
+                    if (
+                      enforcePureMode &&
+                      context.hasPureGlobals &&
+                      !ignoreComment
+                    ) {
                       throw atRule.error(
                         'Selector in at-rule"' +
                           selector +
@@ -677,8 +691,10 @@ module.exports = (options = {}) => {
             context.options = options;
             context.localAliasMap = localAliasMap;
 
-            const ignoreComment = pureMode ? getIgnoreComment(rule) : undefined;
-            const isNotPure = pureMode && !isPureSelector(context, rule);
+            const ignoreComment = enforcePureMode
+              ? getIgnoreComment(rule)
+              : undefined;
+            const isNotPure = enforcePureMode && !isPureSelector(context, rule);
 
             if (
               isNotPure &&
