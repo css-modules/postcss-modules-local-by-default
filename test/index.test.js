@@ -1181,6 +1181,117 @@ const tests = [
             }`,
   },
   {
+    name: "should disable pure mode checks for entire file with no-check comment",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-no-check */
+            :global(.foo) { border: 1px solid #e2e8f0 }
+            :global(.bar) { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) }
+            :global(.baz) { background: #4299e1 }`,
+    expected: `/* cssmodules-pure-no-check */
+            .foo { border: 1px solid #e2e8f0 }
+            .bar { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) }
+            .baz { background: #4299e1 }`,
+  },
+  {
+    name: "should disable pure mode checks for nested selectors",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-no-check */
+            :global(.foo) {
+              &:hover { border-color: #cbd5e0 }
+              & :global(.bar) { color: blue }
+            }`,
+    expected: `/* cssmodules-pure-no-check */
+            .foo {
+              &:hover { border-color: #cbd5e0 }
+              & .bar { color: blue }
+            }`,
+  },
+  {
+    name: "should ignore no-check comment if not at root level",
+    options: { mode: "pure" },
+    input: `:global(.bar) { color: blue }
+            /* cssmodules-pure-no-check */`,
+    error: /is not pure/,
+  },
+  {
+    name: "should allow other comments before no-check comment",
+    options: { mode: "pure" },
+    input: `/* Some file description */
+            /* cssmodules-pure-no-check */
+            :global(.foo) { color: blue }`,
+    expected: `/* Some file description */
+            /* cssmodules-pure-no-check */
+            .foo { color: blue }`,
+  },
+  {
+    name: "should disable pure mode checks for deep nested selectors",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-no-check */
+            :global(.foo) { max-width: 600px }
+            :global(.bar) { background: #fafafa }
+            :global(.baz) {
+              :global(.foobar) {
+                &::-webkit-scrollbar { width: 8px }
+              }
+            }`,
+    expected: `/* cssmodules-pure-no-check */
+            .foo { max-width: 600px }
+            .bar { background: #fafafa }
+            .baz {
+              .foobar {
+                &::-webkit-scrollbar { width: 8px }
+              }
+            }`,
+  },
+  {
+    name: "should work with keyframes when no-check is enabled",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-no-check */
+            @keyframes :global(fadeIn) {
+              from { opacity: 0 }
+              to { opacity: 1 }
+            }
+            :global(.animate) { animation: global(fadeIn) 0.3s }`,
+    expected: `/* cssmodules-pure-no-check */
+            @keyframes fadeIn {
+              from { opacity: 0 }
+              to { opacity: 1 }
+            }
+            .animate { animation: fadeIn 0.3s }`,
+  },
+  {
+    name: "should allow multiline no-check comment",
+    options: { mode: "pure" },
+    input: `/*
+              cssmodules-pure-no-check
+            */
+            :global(.foo) { color: blue }`,
+    expected: `/*
+              cssmodules-pure-no-check
+            */
+            .foo { color: blue }`,
+  },
+  {
+    name: "should allow additional text in no-check comment",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-no-check - needed for styling third-party components */
+            :global(.foo) { color: blue }`,
+    expected: `/* cssmodules-pure-no-check - needed for styling third-party components */
+            .foo { color: blue }`,
+  },
+  {
+    name: "should work with media queries when no-check is enabled",
+    options: { mode: "pure" },
+    input: `/* cssmodules-pure-no-check */
+            @media (max-width: 768px) {
+              :global(.foo) { position: fixed }
+            }`,
+    expected: `/* cssmodules-pure-no-check */
+            @media (max-width: 768px) {
+              .foo { position: fixed }
+            }`,
+  },
+  {
     name: "css nesting",
     input: `
 .foo {
