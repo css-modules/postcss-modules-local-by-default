@@ -1214,6 +1214,15 @@ const tests = [
     error: /is not pure/,
   },
   {
+    name: "should ignore no-check comment if not at root level #2",
+    options: { mode: "pure" },
+    input: `/* Some file description */
+            .class { color: red; }
+            /* cssmodules-pure-no-check */
+            :global(.foo) { color: blue }`,
+    error: /is not pure/,
+  },
+  {
     name: "should allow other comments before no-check comment",
     options: { mode: "pure" },
     input: `/* Some file description */

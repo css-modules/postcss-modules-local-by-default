@@ -59,12 +59,26 @@ Declarations (mode `local`, by default):
 In pure mode, all selectors must contain at least one local class or id
 selector
 
-To ignore this rule for a specific selector, add the following comment in front
+To ignore this rule for a specific selector, add the a `/* cssmodules-pure-ignore */` comment in front
 of the selector:
 
 ```css
 /* cssmodules-pure-ignore */
 :global(#modal-backdrop) {
+  ...;
+}
+```
+
+or by adding a `/* cssmodules-pure-no-check */` comment at the top of a file to disable this check for the whole file:
+
+```css
+/* cssmodules-pure-no-check */
+
+:global(#modal-backdrop) {
+  ...;
+}
+
+:global(#my-id) {
   ...;
 }
 ```
