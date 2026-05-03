@@ -38,6 +38,40 @@ function getIgnoreComment(node) {
   }
 }
 
+// Parse `@scope (start)? (to (end))?` params (#90). Uses postcss-value-parser
+// to tokenize parens, strings, escapes, and comments correctly. Quirk: `to(...)`
+// with no whitespace parses as one function — we split it back so all spacings
+// reduce to the same three grammar shapes.
+function parseScopeParams(params) {
+  const nodes = valueParser(params)
+    .nodes.filter((n) => n.type !== "space")
+    .flatMap((n) =>
+      n.type === "function" && n.value.toLowerCase() === "to"
+        ? [
+            { type: "word", value: "to" },
+            { ...n, value: "" },
+          ]
+        : [n]
+    );
+
+  const isParen = (n) => n && n.type === "function" && n.value === "";
+  const isTo = (n) => n && n.type === "word" && n.value.toLowerCase() === "to";
+  const inner = (n) => valueParser.stringify(n.nodes);
+
+  if (nodes.length === 1 && isParen(nodes[0]))
+    return { start: inner(nodes[0]), end: null };
+  if (nodes.length === 2 && isTo(nodes[0]) && isParen(nodes[1]))
+    return { start: null, end: inner(nodes[1]) };
+  if (
+    nodes.length === 3 &&
+    isParen(nodes[0]) &&
+    isTo(nodes[1]) &&
+    isParen(nodes[2])
+  )
+    return { start: inner(nodes[0]), end: inner(nodes[2]) };
+  return null;
+}
+
 function normalizeNodeArray(nodes) {
   const array = [];
 
@@ -561,7 +595,7 @@ module.exports = (options = {}) => {
       const localAliasMap = new Map();
 
       return {
-        Once(root) {
+        Once(root, { result }) {
           const { icssImports } = extractICSS(root, false);
           const enforcePureMode = pureMode && !isPureCheckDisabled(root);
 
@@ -613,62 +647,60 @@ module.exports = (options = {}) => {
                   global: globalKeyframes,
                 });
               });
-            } else if (/scope$/i.test(atRule.name)) {
-              if (atRule.params) {
-                const ignoreComment = pureMode
-                  ? getIgnoreComment(atRule)
-                  : undefined;
+              return;
+            }
 
-                if (ignoreComment) {
-                  ignoreComment.remove();
-                }
+            if (/scope$/i.test(atRule.name) && atRule.params) {
+              const ignoreComment = pureMode && getIgnoreComment(atRule);
+              if (ignoreComment) ignoreComment.remove();
 
-                atRule.params = atRule.params
-                  .split("to")
-                  .map((item) => {
-                    const selector = item.trim().slice(1, -1).trim();
-                    const context = localizeNode(
-                      selector,
-                      options.mode,
-                      localAliasMap
+              const parsed = parseScopeParams(atRule.params);
+              if (!parsed) {
+                atRule.warn(
+                  result,
+                  `Could not parse @scope params; selectors will not be localized. Params: ${JSON.stringify(
+                    atRule.params
+                  )}`
+                );
+              } else {
+                const localize = (selector) => {
+                  const context = localizeNode(
+                    selector.trim(),
+                    options.mode,
+                    localAliasMap
+                  );
+                  if (
+                    enforcePureMode &&
+                    context.hasPureGlobals &&
+                    !ignoreComment
+                  ) {
+                    throw atRule.error(
+                      'Selector in at-rule"' +
+                        selector +
+                        '" is not pure ' +
+                        "(pure selectors must contain at least one local class or id)"
                     );
-
-                    context.options = options;
-                    context.localAliasMap = localAliasMap;
-
-                    if (
-                      enforcePureMode &&
-                      context.hasPureGlobals &&
-                      !ignoreComment
-                    ) {
-                      throw atRule.error(
-                        'Selector in at-rule"' +
-                          selector +
-                          '" is not pure ' +
-                          "(pure selectors must contain at least one local class or id)"
-                      );
-                    }
-
-                    return `(${context.selector})`;
-                  })
-                  .join(" to ");
+                  }
+                  return context.selector;
+                };
+                atRule.params = [
+                  parsed.start !== null && `(${localize(parsed.start)})`,
+                  parsed.end !== null && `to (${localize(parsed.end)})`,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
               }
+            }
 
+            // Localize decls in the at-rule body. Shallow on purpose — nested
+            // rules are picked up by walkRules below. Body-less at-rules
+            // (e.g. `@scope (.foo);`) have undefined .nodes.
+            if (atRule.nodes) {
               atRule.nodes.forEach((declaration) => {
                 if (declaration.type === "decl") {
                   localizeDeclaration(declaration, {
                     localAliasMap,
-                    options: options,
-                    global: globalMode,
-                  });
-                }
-              });
-            } else if (atRule.nodes) {
-              atRule.nodes.forEach((declaration) => {
-                if (declaration.type === "decl") {
-                  localizeDeclaration(declaration, {
-                    localAliasMap,
-                    options: options,
+                    options,
                     global: globalMode,
                   });
                 }

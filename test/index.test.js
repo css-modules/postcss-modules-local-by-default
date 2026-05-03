@@ -2056,6 +2056,169 @@ html {
 }
 `,
   },
+  // ── Regression: #90 — class names containing the substring "to" ────
+  // Previously `params.split("to")` truncated any class name containing
+  // "to" (like "button" containing "bu" + "to" + "n"), producing
+  // malformed output with extra `to ()` clauses and partial class names.
+  {
+    name: "@scope at-rule — class name contains 'to' substring (#90)",
+    input: `
+@scope (.button) to (.toolbar) {
+  .button {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:local(.button)) to (:local(.toolbar)) {
+  :local(.button) {
+    color: red;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule — multiple classes with 'to' substring (#90)",
+    input: `
+@scope (.photo-tile) to (.tooltip, .stockton) {
+  .into-view {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:local(.photo-tile)) to (:local(.tooltip), :local(.stockton)) {
+  :local(.into-view) {
+    color: red;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule — attribute selector value contains 'to' (#90)",
+    input: `
+@scope ([data-section="footer"]) to ([role="button"]) {
+  .root {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope ([data-section="footer"]) to ([role="button"]) {
+  :local(.root) {
+    color: red;
+  }
+}
+`,
+  },
+  {
+    name: "@scope at-rule — bare class with 'to' inside but no scope-end (#90)",
+    input: `
+@scope (.tooltip) {
+  .body {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:local(.tooltip)) {
+  :local(.body) {
+    color: red;
+  }
+}
+`,
+  },
+  // CSS comments inside `@scope` params can contain unbalanced parens,
+  // a literal `to`, or both. Naive paren-depth counting would miscount;
+  // the parser must skip `/* ... */` regions when walking selector text.
+  {
+    name: "@scope at-rule — CSS comment containing 'to' and parens (#90)",
+    input: `
+@scope (.foo /* hi ) to ( bye */) to (.bar) {
+  .body {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:local(.foo)) to (:local(.bar)) {
+  :local(.body) {
+    color: red;
+  }
+}
+`,
+  },
+  // CSS identifier escapes — `\(` and `\)` are legal in identifiers
+  // (e.g. CSS-in-JS tools sometimes emit them). The parser must treat
+  // backslash-escaped chars as literal so paren depth stays balanced.
+  {
+    name: "@scope at-rule — escaped paren in identifier (#90)",
+    input: `
+@scope (.foo\\(bar) to (.baz) {
+  .body {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:local(.foo\\(bar)) to (:local(.baz)) {
+  :local(.body) {
+    color: red;
+  }
+}
+`,
+  },
+  // Body-less @scope at-rules (e.g. `@scope (.foo);`) have `atRule.nodes`
+  // === undefined; the unconditional `atRule.nodes.forEach(...)` in the
+  // @scope branch threw `Cannot read properties of undefined`. The
+  // non-scope at-rule branch has the same guard.
+  {
+    name: "@scope at-rule — body-less @scope no longer crashes",
+    input: `@scope (.foo);`,
+    expected: `@scope (:local(.foo));`,
+  },
+  // The `to` keyword is case-insensitive per CSS keyword rules.
+  {
+    name: "@scope at-rule — uppercase TO keyword (#90)",
+    input: `
+@scope (.foo) TO (.bar) {
+  .body {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:local(.foo)) to (:local(.bar)) {
+  :local(.body) {
+    color: red;
+  }
+}
+`,
+  },
+  // Real-world `@scope` inputs use arbitrary functional-pseudo nesting:
+  // `:is()`, `:not()`, `:where()`, `:has()`, and full selector lists with
+  // commas. The parser separates scope-start from scope-end by matching
+  // the outermost paren pairs and the `to` keyword that appears between
+  // them at depth 0 — not by string-splitting. This case exercises that:
+  // both clauses contain colons, multiple parens, and the localizer must
+  // descend into each nested selector to localize the bare classes.
+  {
+    name: "@scope at-rule — nested :is()/:not() selectors",
+    input: `
+@scope (:is(.class:not(.another-class))) to (:not(:is(.class):not(.another-class))) {
+  .root {
+    color: red;
+  }
+}
+`,
+    expected: `
+@scope (:is(:local(.class):not(:local(.another-class)))) to (:not(:is(:local(.class)):not(:local(.another-class)))) {
+  :local(.root) {
+    color: red;
+  }
+}
+`,
+  },
 ];
 
 function process(css, options) {
